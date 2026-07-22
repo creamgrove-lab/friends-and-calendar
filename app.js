@@ -1,7 +1,7 @@
 ﻿const storageKey = "friend-invite-calendar-v4-blank-ranges";
 const scheduleResetKey = "friend-invite-calendar-glass-v13-schedule-reset";
-const supabaseUrl = "https://gvzqhwnjuxmnoayytytz.supabase.co";
-const supabaseKey = "sb_publishable_Cer_OmdZcW97rJwSXPhs-Q_gXI8woLj";
+const supabaseUrl = "https://joqosgplspsfrtzcpfwm.supabase.co";
+const supabaseKey = "sb_publishable_CF0IXFM6pV8mI6f4MLA80g_EKSc2Tqi";
 const supabaseClient = window.supabase?.createClient(supabaseUrl, supabaseKey) || null;
 let cloudReady = false;
 let cloudSaving = false;
@@ -1394,28 +1394,43 @@ $("#closeLoginButton").addEventListener("click", () => $("#loginDialog").close()
 $("#closeBookingButton").addEventListener("click", () => $("#bookingDialog").close());
 $("#closeAdminRequestButton").addEventListener("click", () => $("#adminRequestDialog").close());
 
-$("#loginForm").addEventListener("submit", (event) => {
+$("#loginForm").addEventListener("submit", async (event) => {
   event.preventDefault();
-  if ($("#loginUser").value.trim() === "admin" && $("#loginPassword").value === "admin123") {
-    session = { role: "admin", id: "admin", name: "我的後台" };
-    $("#loginError").textContent = "";
-    $("#loginDialog").close();
-    showView("public");
+  if (!supabaseClient) {
+    $("#loginError").textContent = "目前還沒有載入雲端登入功能，請重新整理後再試一次。";
     return;
   }
-  $("#loginError").textContent = "管理者帳密不正確。";
+  const email = $("#loginUser").value.trim();
+  const password = $("#loginPassword").value;
+  const { data: authData, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error || !authData.user) {
+    console.warn("Supabase login error", error);
+    $("#loginError").textContent = error?.message ? `登入失敗：${error.message}` : "管理者帳密不正確。";
+    return;
+  }
+  const { data: isAdmin, error: adminError } = await supabaseClient.rpc("is_admin");
+  if (adminError || !isAdmin) {
+    await supabaseClient.auth.signOut();
+    $("#loginError").textContent = "這個 email 還不是管理者。";
+    return;
+  }
+  session = { role: "admin", id: authData.user.id, name: "我的後台", email: authData.user.email };
+  $("#loginError").textContent = "";
+  $("#loginDialog").close();
+  await loadCloudData();
+  showView("public");
 });
 
-$("#logoutButton").addEventListener("click", () => {
+async function logoutAdmin() {
+  if (supabaseClient) await supabaseClient.auth.signOut();
   session = null;
   $("#loginDialog").close();
+  await loadCloudData();
   showView("public");
-});
+}
 
-$("#topLogoutButton").addEventListener("click", () => {
-  session = null;
-  showView("public");
-});
+$("#logoutButton").addEventListener("click", logoutAdmin);
+$("#topLogoutButton").addEventListener("click", logoutAdmin);
 
 $("#goMemberButton").addEventListener("click", () => {
   if ($("#loginDialog").open) $("#loginDialog").close();
@@ -1763,5 +1778,8 @@ async function initApp() {
 }
 
 initApp();
+
+
+
 
 
