@@ -6,7 +6,7 @@
     <title>妳想約約ㄇ</title>
     <meta name="description" content="給親近朋友看的可約時間、邀約申請與留言小站。" />
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./style.css?v=glass-v19" />
+    <link rel="stylesheet" href="./style.css?v=glass-v20" />
   </head>
   <body>
     <header class="topbar">
@@ -109,15 +109,15 @@
         <div id="loginFields">
           <label>
             帳號
-            <input id="loginUser" autocomplete="username" placeholder="milyss.studio@gmail.com" />
+            <input id="loginUser" autocomplete="username" />
           </label>
           <label>
             密碼
-            <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Supabase 密碼" />
+            <input id="loginPassword" type="password" autocomplete="current-password" />
           </label>
           <p class="error-text" id="loginError"></p>
           <button class="primary-button" type="submit">登入</button>
-          <p class="hint">管理者請使用 Supabase 帳號登入。</p>
+
         </div>
 
         <div class="hidden" id="sessionBox">
@@ -189,9 +189,10 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./app.js?v=glass-v19"></script>
+    <script src="./app.js?v=glass-v20"></script>
   </body>
 </html>
+
 
 
 
