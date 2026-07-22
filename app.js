@@ -1248,7 +1248,10 @@ function renderAdminRequestDialog() {
                   <p class="card-kicker">${activity?.label || "邀約"}</p>
                   <h3>${escapeHtml(request.name)} · ${requestStatusText[request.status] || request.status}</h3>
                 </div>
-                <span>${formatRequestTimeRange(request)}</span>
+                <div class="review-card-tools">
+                  <span>${formatRequestTimeRange(request)}</span>
+                  <button class="delete-request-button" type="button" data-delete-request="${request.id}" aria-label="刪除 ${escapeHtml(request.name)} 的申請">刪除</button>
+                </div>
               </div>
               <p class="request-meta">${formatDate(request.date)} · ${formatRequestTimeRange(request)}</p>
               <p>${escapeHtml(request.message || "沒有留言")}</p>
@@ -1344,6 +1347,29 @@ function releaseApprovedRequestFromCalendar(request) {
   syncDateRequestsToCalendar(request.date, request);
 }
 
+async function deleteInviteRequest(requestId) {
+  const request = data.requests.find((item) => item.id === requestId);
+  if (!request) return;
+  const ok = window.confirm(`確定要刪除 ${request.name || "朋友"} 的申請嗎？刪除後不能復原。`);
+  if (!ok) return;
+
+  if (supabaseClient && isUuid(request.id)) {
+    const { error } = await supabaseClient.from("invite_requests").delete().eq("id", request.id);
+    if (error) {
+      adminReviewNotice = `刪除失敗：${error.message}`;
+      renderAdminRequestDialog();
+      return;
+    }
+  }
+
+  data.requests = data.requests.filter((item) => item.id !== request.id);
+  syncDateRequestsToCalendar(request.date, request);
+  recentlySyncedRequestId = "";
+  adminReviewNotice = "已刪除申請";
+  saveData({ cloud: false });
+  render();
+  if ($("#adminRequestDialog")?.open) renderAdminRequestDialog();
+}
 function updateRequestReview(requestId, nextStatus) {
   const request = data.requests.find((item) => item.id === requestId);
   if (!request) return;
@@ -1528,7 +1554,7 @@ $("#bookingForm").addEventListener("submit", async (event) => {
   $("#bookingDialog").close();
   render();
 });
-document.body.addEventListener("click", (event) => {
+document.body.addEventListener("click", async (event) => {
   const target = event.target;
   const startEditButton = target.closest("[data-start-edit]");
   if (startEditButton) {
@@ -1564,6 +1590,11 @@ document.body.addEventListener("click", (event) => {
   const reviewActionButton = target.closest("[data-review-action]");
   if (reviewActionButton) {
     updateRequestReview(reviewActionButton.dataset.reviewId, reviewActionButton.dataset.reviewAction);
+    return;
+  }
+  const deleteRequestButton = target.closest("[data-delete-request]");
+  if (deleteRequestButton) {
+    await deleteInviteRequest(deleteRequestButton.dataset.deleteRequest);
     return;
   }
   const copyReplyButton = target.closest("[data-copy-reply]");
@@ -1778,6 +1809,11 @@ async function initApp() {
 }
 
 initApp();
+
+
+
+
+
 
 
 
