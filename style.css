@@ -1875,3 +1875,21 @@ button.month-day {
   box-shadow: 0 0 0 3px rgba(232, 216, 199, 0.1);
   opacity: 0.72;
 }
+/* glass-v24 align floating nav with content width */
+.topbar,
+.site-shell {
+  width: min(calc(100% - 28px), 430px);
+}
+
+.topbar {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 380px) {
+  .topbar,
+  .site-shell {
+    width: min(calc(100% - 20px), 430px);
+  }
+}
+
