@@ -8,35 +8,35 @@ let cloudSaving = false;
 let cloudSaveTimer = null;
 let lastCloudError = "";
 const statusText = {
-  open: "½Ğ¬ù§Ú",
-  partial: "½Ğ¬ù§Ú",
-  pending: "¼f®Ö¹w¬ù¤¤",
-  booked: "¦³¬ù",
-  closed: "¼È¤£¶}©ñ",
-  note: "¼È¤£¶}©ñ",
+  open: "è«‹ç´„æˆ‘",
+  partial: "è«‹ç´„æˆ‘",
+  pending: "å¯©æ ¸é ç´„ä¸­",
+  booked: "æœ‰ç´„",
+  closed: "æš«ä¸é–‹æ”¾",
+  note: "æš«ä¸é–‹æ”¾",
 };
 
 const adminStatusOptions = ["open", "pending", "booked", "closed"];
 
 const requestStatusText = {
-  pending: "¼f®Ö¹w¬ù¤¤",
+  pending: "å¯©æ ¸é ç´„ä¸­",
   approved: "OK",
-  change: "»İ°Q½×",
+  change: "éœ€è¨è«–",
   declined: "NO",
-  done: "¤w§¹¦¨",
+  done: "å·²å®Œæˆ",
 };
 
 const defaultActivityTypes = [
-  { id: "overnight1", label: "¥Ó½Ğ¹L1©]", short: "¹L©]", blocks: 24, template: "{name}¡A§Ú¦P·NÅo¡I{date} {time} ¥i¥H¹L©]¡C" },
-  { id: "overnight2", label: "¥Ó½Ğ¹L2©]", short: "¹L©]", blocks: 48, template: "{name}¡A§Ú¦P·NÅo¡I{date} {time} ¥i¥H¹L2©]¡C" },
-  { id: "live3", label: "¥Ó½Ğ¦P©~3©]", short: "¦P©~", blocks: 72, template: "{name}¡A§Ú¦P·NÅo¡I{date} {time} ¥i¥H¦P©~3©]¡C" },
-  { id: "liveweek", label: "¥Ó½Ğ¦P©~1©P", short: "¦P©~", blocks: 168, template: "{name}¡A§Ú¦P·NÅo¡I{date} {time} ¥i¥H¦P©~1©P¡C" },
-  { id: "kidnap", label: "¥Ó½Ğ¸j¬[©p", short: "¸j¬[", blocks: 6, template: "{name}¡A¸j¬[¥Ó½Ğ¥ı³q¹L¡A§Ú­Ì¦A²Ó½Í¡C" },
-  { id: "meal", label: "¤k¤H¸ò§Ú¦Y¶º", short: "¦Y¶º", blocks: 2, template: "{name}¡A¥i¥H¦Y¶º¡I{date} {time} ¨£¡C" },
-  { id: "outing", label: "¤k¤H¸ò§Ú¨«", short: "¥Xªù", blocks: 4, template: "{name}¡A¥i¥H¥Xªù¡I§Ú¥ı¯d {date} {time}¡C" },
-  { id: "game", label: "¤k¤H¥´game", short: "game", blocks: 3, template: "{name}¡A¥i¥H¥´ game¡I{date} {time} ¶}§½¡C" },
-  { id: "chat", label: "¤k¤H«¥­Ì²á²á", short: "²á²á", blocks: 2, template: "{name}¡A¥i¥H²á²á¡A§Ú¥ı¯d {date} {time}¡C" },
-  { id: "note", label: "§Ú­n»¡®¨®¨¸Ü", short: "¦³¯d¨¥", blocks: 1, template: "{name}¡A§Ú¦¬¨ì§Aªº®¨®¨¸Ü¤F¡C" },
+  { id: "overnight1", label: "ç”³è«‹é1å¤œ", short: "éå¤œ", blocks: 24, template: "{name}ï¼Œæˆ‘åŒæ„å›‰ï¼{date} {time} å¯ä»¥éå¤œã€‚" },
+  { id: "overnight2", label: "ç”³è«‹é2å¤œ", short: "éå¤œ", blocks: 48, template: "{name}ï¼Œæˆ‘åŒæ„å›‰ï¼{date} {time} å¯ä»¥é2å¤œã€‚" },
+  { id: "live3", label: "ç”³è«‹åŒå±…3å¤œ", short: "åŒå±…", blocks: 72, template: "{name}ï¼Œæˆ‘åŒæ„å›‰ï¼{date} {time} å¯ä»¥åŒå±…3å¤œã€‚" },
+  { id: "liveweek", label: "ç”³è«‹åŒå±…1å‘¨", short: "åŒå±…", blocks: 168, template: "{name}ï¼Œæˆ‘åŒæ„å›‰ï¼{date} {time} å¯ä»¥åŒå±…1å‘¨ã€‚" },
+  { id: "kidnap", label: "ç”³è«‹ç¶æ¶å¦³", short: "ç¶æ¶", blocks: 6, template: "{name}ï¼Œç¶æ¶ç”³è«‹å…ˆé€šéï¼Œæˆ‘å€‘å†ç´°è«‡ã€‚" },
+  { id: "meal", label: "å¥³äººè·Ÿæˆ‘åƒé£¯", short: "åƒé£¯", blocks: 2, template: "{name}ï¼Œå¯ä»¥åƒé£¯ï¼{date} {time} è¦‹ã€‚" },
+  { id: "outing", label: "å¥³äººè·Ÿæˆ‘èµ°", short: "å‡ºé–€", blocks: 4, template: "{name}ï¼Œå¯ä»¥å‡ºé–€ï¼æˆ‘å…ˆç•™ {date} {time}ã€‚" },
+  { id: "game", label: "å¥³äººæ‰“game", short: "game", blocks: 3, template: "{name}ï¼Œå¯ä»¥æ‰“ gameï¼{date} {time} é–‹å±€ã€‚" },
+  { id: "chat", label: "å¥³äººå’±å€‘èŠèŠ", short: "èŠèŠ", blocks: 2, template: "{name}ï¼Œå¯ä»¥èŠèŠï¼Œæˆ‘å…ˆç•™ {date} {time}ã€‚" },
+  { id: "note", label: "æˆ‘è¦èªªæ‚„æ‚„è©±", short: "æœ‰ç•™è¨€", blocks: 1, template: "{name}ï¼Œæˆ‘æ”¶åˆ°ä½ çš„æ‚„æ‚„è©±äº†ã€‚" },
 ];
 
 let activityTypes = structuredClone(defaultActivityTypes);
@@ -50,11 +50,11 @@ const defaultBookingTimes = Array.from({ length: 48 }, (_, index) => {
 const defaultData = {
   settings: {
     heroEyebrow: "for close friends",
-    heroTitle: "©p·Q¬ù¬ù£v",
-    heroBody: "¬İ¬İ§Ú­ş¤Ñ¦³ªÅ¡CÂIºñ¦â¤é´Á´N¥i¥H°e¥X¹w¬ù¥Ó½Ğ¡C",
+    heroTitle: "å¦³æƒ³ç´„ç´„ã„‡",
+    heroBody: "çœ‹çœ‹æˆ‘å“ªå¤©æœ‰ç©ºã€‚é»ç¶ è‰²æ—¥æœŸå°±å¯ä»¥é€å‡ºé ç´„ç”³è«‹ã€‚",
     howKicker: "how it works",
-    howTitle: "«ç»ò¨Ï¥Î",
-    howBody: "ÂIºñ¦â¤é´Á¡A¶ñ¤pµ¡°e¥X¹w¬ù¡C\n§Ú¦P·N«á¡A¦æ¨Æ¾ä·|¦P¨B§ó·s¡C\n¤w¦P·Nªº®É¬q¤£¯à­«½Æ¥Ó½Ğ¡C",
+    howTitle: "æ€éº¼ä½¿ç”¨",
+    howBody: "é»ç¶ è‰²æ—¥æœŸï¼Œå¡«å°çª—é€å‡ºé ç´„ã€‚\næˆ‘åŒæ„å¾Œï¼Œè¡Œäº‹æ›†æœƒåŒæ­¥æ›´æ–°ã€‚\nå·²åŒæ„çš„æ™‚æ®µä¸èƒ½é‡è¤‡ç”³è«‹ã€‚",
     howVisible: true,
   },
   activityTypes: structuredClone(defaultActivityTypes),
@@ -95,7 +95,7 @@ function loadData() {
 function normalizeData(raw) {
   const next = { ...structuredClone(defaultData), ...raw };
   next.settings = { ...defaultData.settings, ...(raw.settings || {}) };
-  if (next.settings.heroTitle === "§A·Q¬ù¬ù£v") next.settings.heroTitle = "©p·Q¬ù¬ù£v";
+  if (next.settings.heroTitle === "ä½ æƒ³ç´„ç´„ã„‡") next.settings.heroTitle = "å¦³æƒ³ç´„ç´„ã„‡";
   next.activityTypes = Array.isArray(raw.activityTypes) && raw.activityTypes.length
     ? raw.activityTypes.map((type) => normalizeActivityType(type))
     : structuredClone(defaultActivityTypes);
@@ -110,10 +110,10 @@ function normalizeActivityType(type) {
   return {
     id: type.id || createId("type"),
     code: type.code || "",
-    label: type.label || "·sÁÜ¬ùÃş«¬",
-    short: type.short || "ÁÜ¬ù",
+    label: type.label || "æ–°é‚€ç´„é¡å‹",
+    short: type.short || "é‚€ç´„",
     blocks: Number(type.blocks) || 1,
-    template: type.template || "{name}¡A§Ú¦¬¨ì§AªºÁÜ¬ù¤F¡C",
+    template: type.template || "{name}ï¼Œæˆ‘æ”¶åˆ°ä½ çš„é‚€ç´„äº†ã€‚",
   };
 }
 
@@ -132,11 +132,11 @@ function normalizeCalendarDay(day) {
 }
 
 function normalizeRequest(request) {
-  const legacyFriend = request.friendId === "yu" ? "¤p¦Ğ" : request.friendId === "mei" ? "¤p¬ü" : "";
+  const legacyFriend = request.friendId === "yu" ? "å°ç¾½" : request.friendId === "mei" ? "å°ç¾" : "";
   const type = getActivity(request.activityId || request.typeId) || activityTypes[0];
   return {
     id: request.id || createId("req"),
-    name: request.name || legacyFriend || "ªB¤Í",
+    name: request.name || legacyFriend || "æœ‹å‹",
     activityId: type.id,
     date: request.date || "",
     time: request.time || "",
@@ -159,7 +159,7 @@ function reconcileCalendarRequestSync(dataset) {
   dataset.calendar.forEach((day) => {
     const requests = dataset.requests.filter((request) => request.date === day.date);
     const hasRequestLinkedCalendar =
-      day.publicRequest === "¥Ø«e¦¬¨ì¨Ó¦Û¤½¥DªºÁÜ½Ğ¡C" ||
+      day.publicRequest === "ç›®å‰æ”¶åˆ°ä¾†è‡ªå…¬ä¸»çš„é‚€è«‹ã€‚" ||
       requests.some((request) => calendarLooksLinkedToRequest(day, request));
     if (!hasRequestLinkedCalendar) return;
 
@@ -248,10 +248,10 @@ function activityFromRow(row) {
 
 function activityToRow(type, index) {
   const row = {
-    label: type.label || "·sÁÜ¬ùÃş«¬",
-    short_label: type.short || "ÁÜ¬ù",
+    label: type.label || "æ–°é‚€ç´„é¡å‹",
+    short_label: type.short || "é‚€ç´„",
     blocks: Number(type.blocks) || 1,
-    reply_template: type.template || "{name}¡A§Ú¦¬¨ì§AªºÁÜ¬ù¤F¡C",
+    reply_template: type.template || "{name}ï¼Œæˆ‘æ”¶åˆ°ä½ çš„é‚€ç´„äº†ã€‚",
     active: true,
     sort_order: (index + 1) * 10,
   };
@@ -313,7 +313,7 @@ function requestFromRow(row) {
 function requestToRow(request) {
   const type = getActivity(request.activityId);
   const row = {
-    name: request.name || "ªB¤Í",
+    name: request.name || "æœ‹å‹",
     activity_type_id: isUuid(request.activityId) ? request.activityId : null,
     activity_code: type?.code || (!isUuid(request.activityId) ? request.activityId : null),
     request_date: request.date,
@@ -365,7 +365,7 @@ async function loadCloudData() {
     saveData({ cloud: false });
   } catch (error) {
     cloudReady = false;
-    lastCloudError = error.message || "¶³ºİ¸ê®ÆÅª¨ú¥¢±Ñ";
+    lastCloudError = error.message || "é›²ç«¯è³‡æ–™è®€å–å¤±æ•—";
     console.warn(lastCloudError, error);
   }
 }
@@ -409,7 +409,7 @@ async function saveCloudData() {
 
     lastCloudError = "";
   } catch (error) {
-    lastCloudError = error.message || "¶³ºİÀx¦s¥¢±Ñ";
+    lastCloudError = error.message || "é›²ç«¯å„²å­˜å¤±æ•—";
     console.warn(lastCloudError, error);
   } finally {
     cloudSaving = false;
@@ -422,7 +422,7 @@ async function hydrateSession() {
   const user = authData.session?.user;
   if (!user) return;
   const { data: isAdmin } = await supabaseClient.rpc("is_admin");
-  if (isAdmin) session = { role: "admin", id: user.id, name: "§Úªº«á¥x", email: user.email };
+  if (isAdmin) session = { role: "admin", id: user.id, name: "æˆ‘çš„å¾Œå°", email: user.email };
 }
 
 function createId(prefix) {
@@ -434,7 +434,7 @@ function toDateKey(date) {
 }
 
 function formatDate(date) {
-  if (!date) return "¥¼«ü©w¤é´Á";
+  if (!date) return "æœªæŒ‡å®šæ—¥æœŸ";
   const [year, month, day] = date.split("-").map(Number);
   return new Intl.DateTimeFormat("zh-TW", {
     month: "numeric",
@@ -479,21 +479,21 @@ function inferredRequestEndTime(request) {
 
 function formatRequestTimeRange(request) {
   const start = normalizeTime(request.time);
-  if (!start) return "¥¼«ü©w®É¶¡";
+  if (!start) return "æœªæŒ‡å®šæ™‚é–“";
   const end = inferredRequestEndTime(request);
   return end && end !== start ? `${start}-${end}` : start;
 }
 function buildReply(request) {
   const activity = getActivity(request.activityId) || activityTypes[0];
   return activity.template
-    .replaceAll("{name}", request.name || "ªB¤Í")
+    .replaceAll("{name}", request.name || "æœ‹å‹")
     .replaceAll("{date}", formatDate(request.date))
-    .replaceAll("{time}", formatRequestTimeRange(request) || "¨º¤Ñ");
+    .replaceAll("{time}", formatRequestTimeRange(request) || "é‚£å¤©");
 }
 
 function buildTimeOptions(timesOrDate, selectedValue = "") {
   const times = Array.isArray(timesOrDate) ? timesOrDate : availableTimesForDate(timesOrDate);
-  if (!times.length) return `<option value="">¥Ø«e¨S¦³©|¥i¹w¬ùªº®É¶¡</option>`;
+  if (!times.length) return `<option value="">ç›®å‰æ²’æœ‰å°šå¯é ç´„çš„æ™‚é–“</option>`;
   return times.map((value) => `<option value="${value}" ${value === selectedValue ? "selected" : ""}>${value}</option>`).join("");
 }
 
@@ -508,7 +508,7 @@ function buildEndTimeOptions(start, availableTimes, selectedValue = "") {
     if (endValue !== "24:00" && !availableSet.has(endValue)) break;
     endOptions.push(endValue);
   }
-  if (!endOptions.length) return `<option value="">½Ğ¥ı¿ï¶}©l®É¶¡</option>`;
+  if (!endOptions.length) return `<option value="">è«‹å…ˆé¸é–‹å§‹æ™‚é–“</option>`;
   return endOptions.map((value) => `<option value="${value}" ${value === selectedValue ? "selected" : ""}>${value}</option>`).join("");
 }
 
@@ -557,7 +557,7 @@ function reservedTimesForRequest(request) {
 
 function parseTimesInput(value) {
   const tokens = String(value || "")
-    .split(/[,\n¡B¡A\s]+/)
+    .split(/[,\nã€ï¼Œ\s]+/)
     .map((item) => item.trim())
     .filter(Boolean);
   const times = [];
@@ -623,7 +623,7 @@ function selectedAdminTimes(dateKey) {
 
 function setAdminTimeSelection(dateKey, times) {
   const input = document.querySelector(`[data-admin-calendar-times="${dateKey}"]`);
-  if (input) input.value = sortTimes(times).join("¡B");
+  if (input) input.value = sortTimes(times).join("ã€");
   renderAdminTimeChips(dateKey);
   renderAdminDraftPreview(dateKey);
   adminCalendarNotice = "";
@@ -638,7 +638,7 @@ function renderAdminTimeChips(dateKey) {
   grid.innerHTML = defaultBookingTimes
     .map((time) => `<button class="time-chip ${selected.has(time) ? "selected" : ""}" type="button" data-time-chip="${dateKey}" data-time-value="${time}">${time}</button>`)
     .join("");
-  if (count) count.textContent = selected.size ? `¤w¶}©ñ ${selected.size} ­Ó®É¬q` : "©|¥¼¶}©ñ®É¬q";
+  if (count) count.textContent = selected.size ? `å·²é–‹æ”¾ ${selected.size} å€‹æ™‚æ®µ` : "å°šæœªé–‹æ”¾æ™‚æ®µ";
 }
 
 function renderAdminDraftPreview(dateKey) {
@@ -658,9 +658,9 @@ function renderAdminDraftPreview(dateKey) {
   const scheduleText = draftDay.memo || preview.event || preview.request || "";
   target.innerHTML = `
     <p class="card-kicker">front preview</p>
-    <p><strong>ª¬ºA¡G</strong>${escapeHtml(previewStatus)}</p>
-    ${scheduleText ? `<p><strong>§Úªº¦æµ{¦w±Æ¡G</strong>${escapeHtml(scheduleText)}</p>` : ""}
-    ${preview.remaining !== "no" ? `<p><strong>³Ñ¾l¥i¬ù®É¶¡¡G</strong>${escapeHtml(preview.remaining)}</p>` : ""}
+    <p><strong>ç‹€æ…‹ï¼š</strong>${escapeHtml(previewStatus)}</p>
+    ${scheduleText ? `<p><strong>æˆ‘çš„è¡Œç¨‹å®‰æ’ï¼š</strong>${escapeHtml(scheduleText)}</p>` : ""}
+    ${preview.remaining !== "no" ? `<p><strong>å‰©é¤˜å¯ç´„æ™‚é–“ï¼š</strong>${escapeHtml(preview.remaining)}</p>` : ""}
   `;
 }
 
@@ -673,22 +673,22 @@ function renderAdminTimePicker(dateKey, day) {
       <div class="time-picker-head">
         <div>
           <p class="card-kicker">available time</p>
-          <h3>©|¥i¹w¬ù®É¶¡</h3>
+          <h3>å°šå¯é ç´„æ™‚é–“</h3>
         </div>
         <span data-admin-time-count="${dateKey}"></span>
       </div>
-      <input type="hidden" data-admin-calendar-times="${dateKey}" value="${escapeHtml(sortTimes(initialTimes).join("¡B"))}" />
-      <div class="time-presets" aria-label="§Ö³t¿ï¾Ü®É¬q">
-        <button type="button" data-time-preset="all" data-time-date="${dateKey}">¥ş¤Ñ</button>
-        <button type="button" data-time-preset="morning" data-time-date="${dateKey}">¤W¤È</button>
-        <button type="button" data-time-preset="afternoon" data-time-date="${dateKey}">¤U¤È</button>
-        <button type="button" data-time-preset="evening" data-time-date="${dateKey}">±ß¤W</button>
-        <button type="button" data-time-preset="clear" data-time-date="${dateKey}">²MªÅ</button>
+      <input type="hidden" data-admin-calendar-times="${dateKey}" value="${escapeHtml(sortTimes(initialTimes).join("ã€"))}" />
+      <div class="time-presets" aria-label="å¿«é€Ÿé¸æ“‡æ™‚æ®µ">
+        <button type="button" data-time-preset="all" data-time-date="${dateKey}">å…¨å¤©</button>
+        <button type="button" data-time-preset="morning" data-time-date="${dateKey}">ä¸Šåˆ</button>
+        <button type="button" data-time-preset="afternoon" data-time-date="${dateKey}">ä¸‹åˆ</button>
+        <button type="button" data-time-preset="evening" data-time-date="${dateKey}">æ™šä¸Š</button>
+        <button type="button" data-time-preset="clear" data-time-date="${dateKey}">æ¸…ç©º</button>
       </div>
       <div class="time-range-row">
-        <label>±q<select data-time-range-start="${dateKey}">${options}</select></label>
-        <label>¨ì<select data-time-range-end="${dateKey}">${options}</select></label>
-        <button type="button" data-time-range-add="${dateKey}">¥[¤J</button>
+        <label>å¾<select data-time-range-start="${dateKey}">${options}</select></label>
+        <label>åˆ°<select data-time-range-end="${dateKey}">${options}</select></label>
+        <button type="button" data-time-range-add="${dateKey}">åŠ å…¥</button>
       </div>
       <div class="time-chip-grid" data-admin-time-grid="${dateKey}"></div>
     </section>
@@ -751,18 +751,18 @@ function render() {
 function renderLogin() {
   $("#loginFields").classList.toggle("hidden", !!session);
   $("#sessionBox").classList.toggle("hidden", !session);
-  $("#loginTitle").textContent = session ? `¤wµn¤J¡G${session.name}` : "ºŞ²zªÌµn¤J";
-  $("#sessionText").textContent = session ? "¥Ø«e¨­¥÷¡G§Úªº«á¥x" : "";
+  $("#loginTitle").textContent = session ? `å·²ç™»å…¥ï¼š${session.name}` : "ç®¡ç†è€…ç™»å…¥";
+  $("#sessionText").textContent = session ? "ç›®å‰èº«ä»½ï¼šæˆ‘çš„å¾Œå°" : "";
   $("#topLogoutButton").classList.toggle("hidden", !session);
   const overviewButton = document.querySelector('[data-view="public"]');
   const reviewButton = document.querySelector('[data-view="admin"]');
   if (overviewButton) {
-    overviewButton.textContent = session?.role === "admin" ? "Á`Äı" : "­º­¶";
-    overviewButton.setAttribute("aria-label", session?.role === "admin" ? "Á`Äı" : "­º­¶");
+    overviewButton.textContent = session?.role === "admin" ? "ç¸½è¦½" : "é¦–é ";
+    overviewButton.setAttribute("aria-label", session?.role === "admin" ? "ç¸½è¦½" : "é¦–é ");
   }
   if (reviewButton) {
-    reviewButton.textContent = session?.role === "admin" ? "¼f®Ö" : "ºŞ²zªÌ";
-    reviewButton.setAttribute("aria-label", session?.role === "admin" ? "¼f®Ö" : "ºŞ²zªÌ");
+    reviewButton.textContent = session?.role === "admin" ? "å¯©æ ¸" : "ç®¡ç†è€…";
+    reviewButton.setAttribute("aria-label", session?.role === "admin" ? "å¯©æ ¸" : "ç®¡ç†è€…");
   }
 }
 
@@ -785,8 +785,8 @@ function renderIntro() {
   editableBlock("#heroBody", "heroBody");
   $("#heroEditToggle").classList.toggle("hidden", session?.role !== "admin" || editingGroup === "hero");
   $("#heroEditActions").classList.toggle("hidden", session?.role !== "admin" || editingGroup !== "hero");
-  $(".brand").textContent = data.settings.heroTitle || "©p·Q¬ù¬ù£v";
-  document.title = data.settings.heroTitle || "©p·Q¬ù¬ù£v";
+  $(".brand").textContent = data.settings.heroTitle || "å¦³æƒ³ç´„ç´„ã„‡";
+  document.title = data.settings.heroTitle || "å¦³æƒ³ç´„ç´„ã„‡";
 }
 
 function renderHowItWorks() {
@@ -803,7 +803,7 @@ function renderHowItWorks() {
   $("#howKicker").classList.toggle("hidden", !visible);
   $("#howEyeToggle").classList.toggle("hidden", !isAdmin);
   $("#howEyeToggle").setAttribute("aria-pressed", String(visible));
-  $("#howEyeToggle").setAttribute("title", visible ? "ÁôÂÃ¯d¨¥ªO" : "¶}±Ò¯d¨¥ªO");
+  $("#howEyeToggle").setAttribute("title", visible ? "éš±è—ç•™è¨€æ¿" : "é–‹å•Ÿç•™è¨€æ¿");
   $("#howEyeToggle").classList.toggle("muted", !visible);
   $("#howEditToggle").classList.toggle("hidden", !isAdmin || editingGroup === "how" || !visible);
   $("#howEditActions").classList.toggle("hidden", !isAdmin || editingGroup !== "how" || !visible);
@@ -841,7 +841,7 @@ function applyEditAction(groupName, action) {
 function renderMonth() {
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
-  $("#monthTitle").textContent = `${year} ¦~ ${month + 1} ¤ë`;
+  $("#monthTitle").textContent = `${year} å¹´ ${month + 1} æœˆ`;
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const dayMap = new Map(data.calendar.map((day) => [day.date, day]));
@@ -861,8 +861,8 @@ function renderMonth() {
     const hasPublicContext = requests.some((request) => request.status !== "done");
     const hasCustomScheduleNote = !canBook && !hasPublicContext && !!(base.memo || base.publicEvent || "").trim();
     const actionAttribute = session?.role === "admin"
-      ? `data-admin-date-key="${key}" aria-label="½s¿è ${formatDate(key)}"`
-      : `data-view-date="${key}" aria-label="¬d¬İ ${formatDate(key)} ªºª¬ºA"`;
+      ? `data-admin-date-key="${key}" aria-label="ç·¨è¼¯ ${formatDate(key)}"`
+      : `data-view-date="${key}" aria-label="æŸ¥çœ‹ ${formatDate(key)} çš„ç‹€æ…‹"`;
     const tagHtml = "";
 
     cells.push(`
@@ -897,16 +897,16 @@ function availableTimesForDate(dateKey, existingDay = null) {
 }
 
 function bookedStatusText(request) {
-  const shortLabel = getActivity(request.activityId)?.short || "ÁÜ¬ù";
-  return `¦b ${formatRequestTimeRange(request)} §Ú¤w³Q¬ù¨«¡U${shortLabel}`;
+  const shortLabel = getActivity(request.activityId)?.short || "é‚€ç´„";
+  return `åœ¨ ${formatRequestTimeRange(request)} æˆ‘å·²è¢«ç´„èµ°ï½œ${shortLabel}`;
 }
 function activityPublicEvent(request) {
   const activity = getActivity(request.activityId);
-  if (!activity) return "©M¤k¤H\"¬ù¬ù\"";
-  if (request.activityId === "kidnap") return "³Q¤k¤H¸j¬[";
-  if (request.activityId.startsWith("live")) return "©M¤k¤H\"¦P©~\"";
-  if (request.activityId.startsWith("overnight")) return "©M¤k¤H\"¹L©]\"";
-  return `©M¤k¤H"${activity.short || activity.label}"`;
+  if (!activity) return "å’Œå¥³äºº\"ç´„ç´„\"";
+  if (request.activityId === "kidnap") return "è¢«å¥³äººç¶æ¶";
+  if (request.activityId.startsWith("live")) return "å’Œå¥³äºº\"åŒå±…\"";
+  if (request.activityId.startsWith("overnight")) return "å’Œå¥³äºº\"éå¤œ\"";
+  return `å’Œå¥³äºº"${activity.short || activity.label}"`;
 }
 
 function dayPublicDetail(day, dateKey, requests, availableTimes) {
@@ -921,20 +921,20 @@ function dayPublicDetail(day, dateKey, requests, availableTimes) {
         : hasBusyRequest
           ? "busy"
           : hasWaitingRequest
-            ? requestStatusText[waitingRequest.status] || "¥Ó½Ğ¤¤"
+            ? requestStatusText[waitingRequest.status] || "ç”³è«‹ä¸­"
           : availableTimes.length && day.status === "open"
-            ? "½Ğ¬ù§Ú"
+            ? "è«‹ç´„æˆ‘"
             : availableTimes.length
-              ? "½Ğ¬ù§Ú"
+              ? "è«‹ç´„æˆ‘"
               : day.status === "booked"
-                ? "¦³¬ù"
+                ? "æœ‰ç´„"
                 : day.publicStatus || statusText[day.status] || day.status;
   const event = approved
     ? ""
     : hasBusyRequest
       ? ""
       : waitingRequest
-        ? `${waitingRequest.name || "ªB¤Í"} ¡P ${getActivity(waitingRequest.activityId)?.short || "ÁÜ¬ù"}`
+        ? `${waitingRequest.name || "æœ‹å‹"} Â· ${getActivity(waitingRequest.activityId)?.short || "é‚€ç´„"}`
       : day.memo || "";
   const request =
     approved
@@ -942,16 +942,16 @@ function dayPublicDetail(day, dateKey, requests, availableTimes) {
       : hasBusyRequest
         ? ""
         : hasWaitingRequest
-          ? "¥Ø«e¦³¥Ó½Ğ¦bµ¥½T»{¡C"
+          ? "ç›®å‰æœ‰ç”³è«‹åœ¨ç­‰ç¢ºèªã€‚"
         : day.status === "booked"
-          ? "¥Ø«e¤w¦³¦w±Æ¡C"
+          ? "ç›®å‰å·²æœ‰å®‰æ’ã€‚"
           : availableTimes.length
-            ? "¥Ø«e¨S¦³ÁÜ¬ù¥Ó½Ğ¡C"
+            ? "ç›®å‰æ²’æœ‰é‚€ç´„ç”³è«‹ã€‚"
             : "";
   const remaining = hasBusyRequest
     ? "no"
     : availableTimes.length
-      ? `${availableTimes.slice(0, 8).join("¡B")}${availableTimes.length > 8 ? `¡AÁÙ¦³ ${availableTimes.length - 8} ­Ó®É¬q` : ""}`
+      ? `${availableTimes.slice(0, 8).join("ã€")}${availableTimes.length > 8 ? `ï¼Œé‚„æœ‰ ${availableTimes.length - 8} å€‹æ™‚æ®µ` : ""}`
       : "no";
   return { status, event, request, remaining };
 }
@@ -971,10 +971,10 @@ function renderDayDetail(dateKey) {
         <p class="card-kicker">date detail</p>
         <h3>${formatDate(dateKey)}</h3>
       </div>
-      <p><strong>ª¬ºA¡G</strong>${escapeHtml(publicDetail.status)}</p>
-      ${(publicDetail.event || publicDetail.request) ? `<p><strong>§Úªº¦æµ{¦w±Æ¡G</strong>${escapeHtml(publicDetail.event || publicDetail.request)}</p>` : ""}
-      ${publicDetail.remaining !== "no" ? `<p><strong>³Ñ¾l¥i¬ù®É¶¡¡G</strong>${escapeHtml(publicDetail.remaining)}</p>` : ""}
-      ${availableTimes.length ? `<button class="primary-button" type="button" data-book-from-detail="${dateKey}">ÂI§Ú¬İ¨ä¥L®É¶¡</button>` : ""}
+      <p><strong>ç‹€æ…‹ï¼š</strong>${escapeHtml(publicDetail.status)}</p>
+      ${(publicDetail.event || publicDetail.request) ? `<p><strong>æˆ‘çš„è¡Œç¨‹å®‰æ’ï¼š</strong>${escapeHtml(publicDetail.event || publicDetail.request)}</p>` : ""}
+      ${publicDetail.remaining !== "no" ? `<p><strong>å‰©é¤˜å¯ç´„æ™‚é–“ï¼š</strong>${escapeHtml(publicDetail.remaining)}</p>` : ""}
+      ${availableTimes.length ? `<button class="primary-button" type="button" data-book-from-detail="${dateKey}">é»æˆ‘çœ‹å…¶ä»–æ™‚é–“</button>` : ""}
     </section>
   `;
 }
@@ -984,7 +984,7 @@ function renderPublicRequests() {
   const recent = data.requests.slice(0, 10);
   $("#friendRequests").innerHTML = recent.length
     ? renderRequests(recent, true)
-    : `<p class="empty-state">¥Ø«eÁÙ¨S¦³ÁÜ¬ù¡C</p>`;
+    : `<p class="empty-state">ç›®å‰é‚„æ²’æœ‰é‚€ç´„ã€‚</p>`;
 }
 
 function getRequestsForDate(dateKey) {
@@ -996,11 +996,11 @@ function requestNeedsReview(request) {
 }
 
 function discussionReply(request) {
-  return `${request.name || "ªB¤Í"}ªº³o­Ó®É¶¡§Ú­n§ï±ß¤@ÂI§AOK¶Ü?`;
+  return `${request.name || "æœ‹å‹"}çš„é€™å€‹æ™‚é–“æˆ‘è¦æ”¹æ™šä¸€é»ä½ OKå—?`;
 }
 
 function declinedReply() {
-  return "³o­Ó®É¶¡§Ú¤£¦æ¤F¡A§ï¬ùXXX¤Ñ¥i¥H¶Ü?";
+  return "é€™å€‹æ™‚é–“æˆ‘ä¸è¡Œäº†ï¼Œæ”¹ç´„XXXå¤©å¯ä»¥å—?";
 }
 
 function renderAdminRequestCalendar() {
@@ -1026,10 +1026,10 @@ function renderAdminRequestCalendar() {
     const needsReview = requests.some(requestNeedsReview);
     const approvedCount = requests.filter((request) => request.status === "approved").length;
     const requestCount = requests.length;
-    const tag = needsReview ? "«İ¼f" : approvedCount ? "OK" : requestCount ? "¤w³B²z" : "";
+    const tag = needsReview ? "å¾…å¯©" : approvedCount ? "OK" : requestCount ? "å·²è™•ç†" : "";
 
     cells.push(`
-      <${requestCount ? "button" : "div"} ${requestCount ? "type=\"button\"" : ""} class="month-day request-review-day ${needsReview ? "needs-review" : ""} ${requestCount ? "has-request" : "no-request"}" ${requestCount ? `data-review-date="${key}" aria-label="¬d¬İ ${formatDate(key)} ªº¥Ó½Ğ"` : ""}>
+      <${requestCount ? "button" : "div"} ${requestCount ? "type=\"button\"" : ""} class="month-day request-review-day ${needsReview ? "needs-review" : ""} ${requestCount ? "has-request" : "no-request"}" ${requestCount ? `data-review-date="${key}" aria-label="æŸ¥çœ‹ ${formatDate(key)} çš„ç”³è«‹"` : ""}>
         <span class="day-number">${day}</span>
         ${needsReview ? `<span class="review-dot" aria-hidden="true"></span>` : ""}
         ${tag ? `<span class="review-day-tag">${tag}${requestCount > 1 ? ` ${requestCount}` : ""}</span>` : ""}
@@ -1040,16 +1040,16 @@ function renderAdminRequestCalendar() {
   target.innerHTML = `
     <div class="admin-request-calendar">
       <div class="month-head compact">
-        <button class="small-round" id="adminRequestPrevMonth" type="button" aria-label="¤W¤@­Ó¤ë">?</button>
+        <button class="small-round" id="adminRequestPrevMonth" type="button" aria-label="ä¸Šä¸€å€‹æœˆ">?</button>
         <div>
           <p class="card-kicker">review month</p>
-          <h3>${year} ¦~ ${month + 1} ¤ë</h3>
+          <h3>${year} å¹´ ${month + 1} æœˆ</h3>
         </div>
-        <button class="small-round" id="adminRequestNextMonth" type="button" aria-label="¤U¤@­Ó¤ë">?</button>
+        <button class="small-round" id="adminRequestNextMonth" type="button" aria-label="ä¸‹ä¸€å€‹æœˆ">?</button>
       </div>
-      <p class="admin-review-summary">${reviewCount ? `¦³ ${reviewCount} µ§»İ­n§A¼f®Ö¡A¬õÂI¤é´ÁÂI¶}¬İ¡C` : "³o­Ó¤ë¥Ø«e¨S¦³«İ¼f¥Ó½Ğ¡C"}</p>
+      <p class="admin-review-summary">${reviewCount ? `æœ‰ ${reviewCount} ç­†éœ€è¦ä½ å¯©æ ¸ï¼Œç´…é»æ—¥æœŸé»é–‹çœ‹ã€‚` : "é€™å€‹æœˆç›®å‰æ²’æœ‰å¾…å¯©ç”³è«‹ã€‚"}</p>
       <div class="week-row" aria-hidden="true">
-        <span>¤é</span><span>¤@</span><span>¤G</span><span>¤T</span><span>¥|</span><span>¤­</span><span>¤»</span>
+        <span>æ—¥</span><span>ä¸€</span><span>äºŒ</span><span>ä¸‰</span><span>å››</span><span>äº”</span><span>å…­</span>
       </div>
       <div class="month-grid admin-review-grid">${cells.join("")}</div>
     </div>
@@ -1073,9 +1073,9 @@ function renderTypeEditor() {
   const isUsed = selectedType ? data.requests.some((request) => request.activityId === selectedType.id) : false;
   $("#adminTypes").innerHTML = `
     <div class="type-toolbar">
-      <button class="primary-button" type="button" data-add-type>·s¼WÃş«¬</button>
+      <button class="primary-button" type="button" data-add-type>æ–°å¢é¡å‹</button>
     </div>
-    <div class="type-picker" aria-label="¿ï¾Ü­n½s¿èªºÃş«¬">
+    <div class="type-picker" aria-label="é¸æ“‡è¦ç·¨è¼¯çš„é¡å‹">
       ${activityTypes
         .map((type) => `<button type="button" class="${type.id === selectedActivityTypeId ? "active" : ""}" data-select-type="${type.id}">${escapeHtml(type.short || type.label)}</button>`)
         .join("")}
@@ -1089,30 +1089,30 @@ function renderTypeEditor() {
                 <p class="card-kicker">editing type</p>
                 <h3>${escapeHtml(selectedType.label)}</h3>
               </div>
-              <button class="danger-button" type="button" data-delete-type="${selectedType.id}" ${isUsed ? "disabled" : ""}>§R°£</button>
+              <button class="danger-button" type="button" data-delete-type="${selectedType.id}" ${isUsed ? "disabled" : ""}>åˆªé™¤</button>
             </div>
             <label>
-              Ãş«¬¦WºÙ
+              é¡å‹åç¨±
               <input data-type-draft-field="label" value="${escapeHtml(selectedType.label)}" />
             </label>
             <label>
-              ¤ë¾äµu¼ĞÅÒ
+              æœˆæ›†çŸ­æ¨™ç±¤
               <input data-type-draft-field="short" value="${escapeHtml(selectedType.short)}" />
             </label>
             <label>
-              ¹w¦ô®É¼Æ
+              é ä¼°æ™‚æ•¸
               <input data-type-draft-field="blocks" type="number" min="1" value="${selectedType.blocks}" />
             </label>
             <label>
-              OK «á¤½ª©¦^ÂĞ
+              OK å¾Œå…¬ç‰ˆå›è¦†
               <textarea data-type-draft-field="template">${escapeHtml(selectedType.template)}</textarea>
             </label>
-            ${isUsed ? `<p class="hint">¤w¦³¥Ó½Ğ¨Ï¥Î¤¤¡A¼È®É¤£¯à§R°£¡C</p>` : ""}
-            <button class="primary-button" type="button" data-confirm-type="${selectedType.id}">½T»{§ó·sÃş«¬</button>
-            <p class="sync-notice ${typeEditorNotice ? "" : "hidden"}">${typeEditorNotice || "¤w§ó·sÃş«¬"}</p>
+            ${isUsed ? `<p class="hint">å·²æœ‰ç”³è«‹ä½¿ç”¨ä¸­ï¼Œæš«æ™‚ä¸èƒ½åˆªé™¤ã€‚</p>` : ""}
+            <button class="primary-button" type="button" data-confirm-type="${selectedType.id}">ç¢ºèªæ›´æ–°é¡å‹</button>
+            <p class="sync-notice ${typeEditorNotice ? "" : "hidden"}">${typeEditorNotice || "å·²æ›´æ–°é¡å‹"}</p>
           </article>
         `
-        : `<p class="empty-state">¥Ø«e¨S¦³Ãş«¬¡C</p>`
+        : `<p class="empty-state">ç›®å‰æ²’æœ‰é¡å‹ã€‚</p>`
     }
   `;
 }
@@ -1124,7 +1124,7 @@ function commitTypeEditor(typeId) {
     type[field.dataset.typeDraftField] = field.dataset.typeDraftField === "blocks" ? Number(field.value) || 1 : field.value;
   });
   selectedActivityTypeId = type.id;
-  typeEditorNotice = "¤w§ó·sÃş«¬";
+  typeEditorNotice = "å·²æ›´æ–°é¡å‹";
   saveActivityTypes();
   renderTypeEditor();
 }
@@ -1133,7 +1133,7 @@ function renderAdminDayEditor(selector = "#dayDetail") {
   const target = $(selector);
   if (!target) return;
   if (!selectedAdminDateKey) {
-    target.innerHTML = `<section class="admin-day-editor"><p class="empty-state">ÂI¤ë¾ä¤é´Á´N¥i¥H½s¿è¤½¶}¤é¾ä¡C</p></section>`;
+    target.innerHTML = `<section class="admin-day-editor"><p class="empty-state">é»æœˆæ›†æ—¥æœŸå°±å¯ä»¥ç·¨è¼¯å…¬é–‹æ—¥æ›†ã€‚</p></section>`;
     return;
   }
   const year = currentMonth.getFullYear();
@@ -1154,24 +1154,24 @@ function renderAdminDayEditor(selector = "#dayDetail") {
           <h3>${formatDate(selectedAdminDateKey)}</h3>
         </div>
         <label>
-          ªB¤Í¬İ¨ìªºª¬ºA
+          æœ‹å‹çœ‹åˆ°çš„ç‹€æ…‹
           <select data-admin-calendar-status="${selectedAdminDateKey}">
             ${adminStatusOptions.map((value) => `<option value="${value}" ${selectedDay.status === value ? "selected" : ""}>${statusText[value]}</option>`).join("")}
           </select>
         </label>
         <label>
-          ª¬ºAÅã¥Ü¤å¦r
-          <input data-admin-calendar-public-status="${selectedAdminDateKey}" value="${escapeHtml(selectedDay.publicStatus || statusText[selectedDay.status] || "¼È¤£¶}©ñ")}" />
+          ç‹€æ…‹é¡¯ç¤ºæ–‡å­—
+          <input data-admin-calendar-public-status="${selectedAdminDateKey}" value="${escapeHtml(selectedDay.publicStatus || statusText[selectedDay.status] || "æš«ä¸é–‹æ”¾")}" />
         </label>
         <label>
-          §Úªº¦æµ{¦w±Æ
-          <textarea data-admin-calendar-memo="${selectedAdminDateKey}" placeholder="¥u¦³§AºŞ²z®É¥Î¡A¤]¥i§@¬°ªB¤Í¬İ¨ìªº³Æµù¡C">${escapeHtml(selectedDay.memo || "")}</textarea>
+          æˆ‘çš„è¡Œç¨‹å®‰æ’
+          <textarea data-admin-calendar-memo="${selectedAdminDateKey}" placeholder="åªæœ‰ä½ ç®¡ç†æ™‚ç”¨ï¼Œä¹Ÿå¯ä½œç‚ºæœ‹å‹çœ‹åˆ°çš„å‚™è¨»ã€‚">${escapeHtml(selectedDay.memo || "")}</textarea>
         </label>
         ${renderAdminTimePicker(selectedAdminDateKey, selectedDay)}
-        <p class="hint ${isAdminBookableStatus(selectedDay.status) ? "" : "hidden"}" data-time-picker-hint="${selectedAdminDateKey}">ÂI¿ï®É¬q½¦Ån§Y¥i¶}©ñ©Î¨ú®ø¡F¤]¥i¥H¥Î§Ö±¶Áä¤@¦¸¿ï¤W¤È¡B¤U¤È¡B±ß¤W©Î¥ş¤Ñ¡C</p>
+        <p class="hint ${isAdminBookableStatus(selectedDay.status) ? "" : "hidden"}" data-time-picker-hint="${selectedAdminDateKey}">é»é¸æ™‚æ®µè† å›Šå³å¯é–‹æ”¾æˆ–å–æ¶ˆï¼›ä¹Ÿå¯ä»¥ç”¨å¿«æ·éµä¸€æ¬¡é¸ä¸Šåˆã€ä¸‹åˆã€æ™šä¸Šæˆ–å…¨å¤©ã€‚</p>
         <section class="front-preview" data-admin-front-preview="${selectedAdminDateKey}"></section>
-        <button class="primary-button" type="button" data-confirm-admin-calendar="${selectedAdminDateKey}">½T»{§ó·s¤½¶}¤é¾ä</button>
-        <p class="sync-notice ${adminCalendarNotice ? "" : "hidden"}" id="adminCalendarSaved">${adminCalendarNotice || "¤w§ó·s¤½¶}¤é¾ä"}</p>
+        <button class="primary-button" type="button" data-confirm-admin-calendar="${selectedAdminDateKey}">ç¢ºèªæ›´æ–°å…¬é–‹æ—¥æ›†</button>
+        <p class="sync-notice ${adminCalendarNotice ? "" : "hidden"}" id="adminCalendarSaved">${adminCalendarNotice || "å·²æ›´æ–°å…¬é–‹æ—¥æ›†"}</p>
       </section>
   `;
   syncAdminTimePickerVisibility(selectedAdminDateKey);
@@ -1190,13 +1190,13 @@ function commitAdminCalendarEdits(dateKey) {
   day.publicEvent = "";
   day.publicRequest = "";
   day.publicRemaining = "";
-  adminCalendarNotice = "¤w§ó·s¤½¶}¤é¾ä";
+  adminCalendarNotice = "å·²æ›´æ–°å…¬é–‹æ—¥æ›†";
   saveData();
   renderMonth();
 }
 
 function renderRequests(requests, readonly) {
-  if (!requests.length) return `<p class="empty-state">¥Ø«eÁÙ¨S¦³ÁÜ¬ù¡C</p>`;
+  if (!requests.length) return `<p class="empty-state">ç›®å‰é‚„æ²’æœ‰é‚€ç´„ã€‚</p>`;
   return requests
     .map((request) => {
       const activity = getActivity(request.activityId);
@@ -1206,27 +1206,27 @@ function renderRequests(requests, readonly) {
         <article class="request-card">
           <div class="request-topline">
             <div>
-              <p class="card-kicker">${activity?.label || "ÁÜ¬ù"}</p>
-              <h3>${escapeHtml(request.name)} ¡P ${requestStatusText[visibleStatus] || visibleStatus}</h3>
+              <p class="card-kicker">${activity?.label || "é‚€ç´„"}</p>
+              <h3>${escapeHtml(request.name)} Â· ${requestStatusText[visibleStatus] || visibleStatus}</h3>
             </div>
             <span>${formatDate(request.createdAt)}</span>
           </div>
-          <p class="request-meta">${formatDate(request.date)} ¡P ${formatRequestTimeRange(request)}</p>
-          <p>${escapeHtml(request.message || "¨S¦³¯d¨¥")}</p>
+          <p class="request-meta">${formatDate(request.date)} Â· ${formatRequestTimeRange(request)}</p>
+          <p>${escapeHtml(request.message || "æ²’æœ‰ç•™è¨€")}</p>
           ${readonly ? `
             ${sentReply ? `<div class="friend-update"><p class="card-kicker">reply</p><p>${escapeHtml(sentReply)}</p></div>` : ""}
           ` : `
             <div class="button-row">
               <button type="button" data-approve="${request.id}">OK</button>
-              <button type="button" data-status="${request.id}" data-next-status="change">»İ°Q½×</button>
+              <button type="button" data-status="${request.id}" data-next-status="change">éœ€è¨è«–</button>
               <button type="button" data-status="${request.id}" data-next-status="declined">NO</button>
             </div>
             <label>
-              ¥i½s¿è¦^ÂĞ
+              å¯ç·¨è¼¯å›è¦†
               <textarea data-reply="${request.id}">${escapeHtml(request.replyDraft || "")}</textarea>
             </label>
-            <button class="primary-button" type="button" data-confirm-request="${request.id}">½T»{§ó·sµ¹ªB¤Í</button>
-            ${recentlySyncedRequestId === request.id ? `<p class="sync-notice">§ó·s§¹¦¨¡A¤w¦P¨Bµoµ¹ªB¤ÍÂP</p>` : ""}
+            <button class="primary-button" type="button" data-confirm-request="${request.id}">ç¢ºèªæ›´æ–°çµ¦æœ‹å‹</button>
+            ${recentlySyncedRequestId === request.id ? `<p class="sync-notice">æ›´æ–°å®Œæˆï¼Œå·²åŒæ­¥ç™¼çµ¦æœ‹å‹åš•</p>` : ""}
           `}
         </article>
       `;
@@ -1237,35 +1237,35 @@ function renderRequests(requests, readonly) {
 function renderAdminRequestDialog() {
   if (!selectedAdminRequestDateKey) return;
   const requests = getRequestsForDate(selectedAdminRequestDateKey);
-  $("#adminRequestDialogTitle").textContent = `${formatDate(selectedAdminRequestDateKey)} ªº¥Ó½Ğ`;
+  $("#adminRequestDialogTitle").textContent = `${formatDate(selectedAdminRequestDateKey)} çš„ç”³è«‹`;
   $("#adminRequestDialogNotice").classList.toggle("hidden", !adminReviewNotice);
-  $("#adminRequestDialogNotice").textContent = adminReviewNotice || "¤w§ó·sª¬ºA";
+  $("#adminRequestDialogNotice").textContent = adminReviewNotice || "å·²æ›´æ–°ç‹€æ…‹";
   $("#adminRequestDialogBody").innerHTML = requests.length
     ? requests
         .map((request) => {
           const activity = getActivity(request.activityId);
           const replyChoices = [
-            { status: "approved", label: "OK ¤½ª©", text: buildReply(request) },
-            { status: "change", label: "«İ°Q½×¤½ª©", text: discussionReply(request) },
-            { status: "declined", label: "°û©Ú¤½ª©", text: declinedReply(request) },
+            { status: "approved", label: "OK å…¬ç‰ˆ", text: buildReply(request) },
+            { status: "change", label: "å¾…è¨è«–å…¬ç‰ˆ", text: discussionReply(request) },
+            { status: "declined", label: "å©‰æ‹’å…¬ç‰ˆ", text: declinedReply(request) },
           ];
           return `
             <article class="request-card review-card ${request.status}">
               <div class="request-topline">
                 <div>
-                  <p class="card-kicker">${activity?.label || "ÁÜ¬ù"}</p>
-                  <h3>${escapeHtml(request.name)} ¡P ${requestStatusText[request.status] || request.status}</h3>
+                  <p class="card-kicker">${activity?.label || "é‚€ç´„"}</p>
+                  <h3>${escapeHtml(request.name)} Â· ${requestStatusText[request.status] || request.status}</h3>
                 </div>
                 <div class="review-card-tools">
                   <span>${formatRequestTimeRange(request)}</span>
-                  <button class="delete-request-button" type="button" data-delete-request="${request.id}" aria-label="§R°£ ${escapeHtml(request.name)} ªº¥Ó½Ğ">§R°£</button>
+                  <button class="delete-request-button" type="button" data-delete-request="${request.id}" aria-label="åˆªé™¤ ${escapeHtml(request.name)} çš„ç”³è«‹">åˆªé™¤</button>
                 </div>
               </div>
-              <p class="request-meta">${formatDate(request.date)} ¡P ${formatRequestTimeRange(request)}</p>
-              <p>${escapeHtml(request.message || "¨S¦³¯d¨¥")}</p>
+              <p class="request-meta">${formatDate(request.date)} Â· ${formatRequestTimeRange(request)}</p>
+              <p>${escapeHtml(request.message || "æ²’æœ‰ç•™è¨€")}</p>
               <div class="button-row review-actions">
                 <button class="review-action ok ${request.status === "approved" ? "active" : ""}" type="button" data-review-action="approved" data-review-id="${request.id}">OK</button>
-                <button class="review-action discuss ${request.status === "change" ? "active" : ""}" type="button" data-review-action="change" data-review-id="${request.id}">»İ°Q½×</button>
+                <button class="review-action discuss ${request.status === "change" ? "active" : ""}" type="button" data-review-action="change" data-review-id="${request.id}">éœ€è¨è«–</button>
                 <button class="review-action no ${request.status === "declined" ? "active" : ""}" type="button" data-review-action="declined" data-review-id="${request.id}">NO</button>
               </div>
               <div class="reply-template-list">
@@ -1275,16 +1275,16 @@ function renderAdminRequestDialog() {
                     <div class="copy-box reply-template active">
                       <p class="card-kicker">${choice.label}</p>
                       <textarea data-review-reply="${request.id}">${escapeHtml(request.replyDraft || choice.text)}</textarea>
-                      <button type="button" data-copy-reply="${request.id}">½Æ»s</button>
+                      <button type="button" data-copy-reply="${request.id}">è¤‡è£½</button>
                     </div>
                   `).join("")}
               </div>
-              ${recentlySyncedRequestId === request.id ? `<p class="sync-notice">¤w§ó·sª¬ºA</p>` : ""}
+              ${recentlySyncedRequestId === request.id ? `<p class="sync-notice">å·²æ›´æ–°ç‹€æ…‹</p>` : ""}
             </article>
           `;
         })
         .join("")
-    : `<p class="empty-state">³o¤Ñ¨S¦³¥Ó½Ğ¡C</p>`;
+    : `<p class="empty-state">é€™å¤©æ²’æœ‰ç”³è«‹ã€‚</p>`;
 }
 
 function openAdminRequestDialog(dateKey) {
@@ -1301,12 +1301,12 @@ function syncApprovedRequestToCalendar(request) {
 }
 
 function calendarLooksLinkedToRequest(day, request) {
-  const name = request.name || "ªB¤Í";
+  const name = request.name || "æœ‹å‹";
   return (
     (day.requestSyncIds || []).includes(request.id) ||
-    day.publicRequest === "¥Ø«e¦¬¨ì¨Ó¦Û¤½¥DªºÁÜ½Ğ¡C" ||
+    day.publicRequest === "ç›®å‰æ”¶åˆ°ä¾†è‡ªå…¬ä¸»çš„é‚€è«‹ã€‚" ||
     day.publicEvent === activityPublicEvent(request) ||
-    day.publicStatus === "¤µ¤Ñ¤w¦³¬ù" ||
+    day.publicStatus === "ä»Šå¤©å·²æœ‰ç´„" ||
     (name && (day.memo || "").includes(name))
   );
 }
@@ -1334,11 +1334,11 @@ function syncDateRequestsToCalendar(dateKey, fallbackRequest = null) {
     const mainRequest = approved[0];
     day.availableTimes = remainingTimes;
     day.status = remainingTimes.length ? "partial" : "booked";
-    day.publicStatus = "¤µ¤Ñ¤w¦³¬ù";
+    day.publicStatus = "ä»Šå¤©å·²æœ‰ç´„";
     day.publicEvent = activityPublicEvent(mainRequest);
-    day.publicRequest = "¥Ø«e¦¬¨ì¨Ó¦Û¤½¥DªºÁÜ½Ğ¡C";
+    day.publicRequest = "ç›®å‰æ”¶åˆ°ä¾†è‡ªå…¬ä¸»çš„é‚€è«‹ã€‚";
     day.publicRemaining = remainingTimes.length
-      ? `${remainingTimes.slice(0, 8).join("¡B")}${remainingTimes.length > 8 ? `¡AÁÙ¦³ ${remainingTimes.length - 8} ­Ó®É¬q` : ""}`
+      ? `${remainingTimes.slice(0, 8).join("ã€")}${remainingTimes.length > 8 ? `ï¼Œé‚„æœ‰ ${remainingTimes.length - 8} å€‹æ™‚æ®µ` : ""}`
       : "no";
     return;
   }
@@ -1358,13 +1358,13 @@ function releaseApprovedRequestFromCalendar(request) {
 async function deleteInviteRequest(requestId) {
   const request = data.requests.find((item) => item.id === requestId);
   if (!request) return;
-  const ok = window.confirm(`½T©w­n§R°£ ${request.name || "ªB¤Í"} ªº¥Ó½Ğ¶Ü¡H§R°£«á¤£¯à´_­ì¡C`);
+  const ok = window.confirm(`ç¢ºå®šè¦åˆªé™¤ ${request.name || "æœ‹å‹"} çš„ç”³è«‹å—ï¼Ÿåˆªé™¤å¾Œä¸èƒ½å¾©åŸã€‚`);
   if (!ok) return;
 
   if (supabaseClient && isUuid(request.id)) {
     const { error } = await supabaseClient.from("invite_requests").delete().eq("id", request.id);
     if (error) {
-      adminReviewNotice = `§R°£¥¢±Ñ¡G${error.message}`;
+      adminReviewNotice = `åˆªé™¤å¤±æ•—ï¼š${error.message}`;
       renderAdminRequestDialog();
       return;
     }
@@ -1373,7 +1373,7 @@ async function deleteInviteRequest(requestId) {
   data.requests = data.requests.filter((item) => item.id !== request.id);
   syncDateRequestsToCalendar(request.date, request);
   recentlySyncedRequestId = "";
-  adminReviewNotice = "¤w§R°£¥Ó½Ğ";
+  adminReviewNotice = "å·²åˆªé™¤ç”³è«‹";
   saveData({ cloud: false });
   render();
   if ($("#adminRequestDialog")?.open) renderAdminRequestDialog();
@@ -1382,7 +1382,7 @@ function updateRequestReview(requestId, nextStatus) {
   const request = data.requests.find((item) => item.id === requestId);
   if (!request) return;
   if (nextStatus === "approved" && requestConflicts(request.date, request.time, inferredRequestEndTime(request), request.id, ["approved"])) {
-    adminReviewNotice = "³o­Ó®É¬q¤w¸g¦³ OK ªº¥Ó½Ğ¤F";
+    adminReviewNotice = "é€™å€‹æ™‚æ®µå·²ç¶“æœ‰ OK çš„ç”³è«‹äº†";
     renderAdminRequestDialog();
     return;
   }
@@ -1400,7 +1400,7 @@ function updateRequestReview(requestId, nextStatus) {
   request.sentReply = request.replyDraft;
   request.sentAdminNote = "";
   recentlySyncedRequestId = request.id;
-  adminReviewNotice = "¤w§ó·sª¬ºA";
+  adminReviewNotice = "å·²æ›´æ–°ç‹€æ…‹";
 
   syncDateRequestsToCalendar(request.date, request);
 
@@ -1431,7 +1431,7 @@ $("#closeAdminRequestButton").addEventListener("click", () => $("#adminRequestDi
 $("#loginForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!supabaseClient) {
-    $("#loginError").textContent = "¥Ø«eÁÙ¨S¦³¸ü¤J¶³ºİµn¤J¥\¯à¡A½Ğ­«·s¾ã²z«á¦A¸Õ¤@¦¸¡C";
+    $("#loginError").textContent = "ç›®å‰é‚„æ²’æœ‰è¼‰å…¥é›²ç«¯ç™»å…¥åŠŸèƒ½ï¼Œè«‹é‡æ–°æ•´ç†å¾Œå†è©¦ä¸€æ¬¡ã€‚";
     return;
   }
   const email = $("#loginUser").value.trim();
@@ -1439,16 +1439,16 @@ $("#loginForm").addEventListener("submit", async (event) => {
   const { data: authData, error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error || !authData.user) {
     console.warn("Supabase login error", error);
-    $("#loginError").textContent = error?.message ? `µn¤J¥¢±Ñ¡G${error.message}` : "ºŞ²zªÌ±b±K¤£¥¿½T¡C";
+    $("#loginError").textContent = error?.message ? `ç™»å…¥å¤±æ•—ï¼š${error.message}` : "ç®¡ç†è€…å¸³å¯†ä¸æ­£ç¢ºã€‚";
     return;
   }
   const { data: isAdmin, error: adminError } = await supabaseClient.rpc("is_admin");
   if (adminError || !isAdmin) {
     await supabaseClient.auth.signOut();
-    $("#loginError").textContent = "³o­Ó email ÁÙ¤£¬OºŞ²zªÌ¡C";
+    $("#loginError").textContent = "é€™å€‹ email é‚„ä¸æ˜¯ç®¡ç†è€…ã€‚";
     return;
   }
-  session = { role: "admin", id: authData.user.id, name: "§Úªº«á¥x", email: authData.user.email };
+  session = { role: "admin", id: authData.user.id, name: "æˆ‘çš„å¾Œå°", email: authData.user.email };
   $("#loginError").textContent = "";
   $("#loginDialog").close();
   await loadCloudData();
@@ -1507,21 +1507,21 @@ $("#bookingForm").addEventListener("submit", async (event) => {
   const endTime = $("#bookingEndTime").value;
   const requestedTimes = timesInBookingRange(startTime, endTime);
   if (!requestedTimes.length) {
-    $("#bookingError").textContent = "½Ğ¿ï¾Ü¤@¬q¥i¥H¹w¬ùªº®É¶¡¡C";
+    $("#bookingError").textContent = "è«‹é¸æ“‡ä¸€æ®µå¯ä»¥é ç´„çš„æ™‚é–“ã€‚";
     return;
   }
   const availableSet = new Set(availableTimesForDate(date));
   if (requestedTimes.some((time) => !availableSet.has(time))) {
-    $("#bookingError").textContent = "³o¬q®É¶¡¤w¸g¤£¯à¹w¬ù¤F¡A½Ğ´«¤@¬q®É¶¡¡C";
+    $("#bookingError").textContent = "é€™æ®µæ™‚é–“å·²ç¶“ä¸èƒ½é ç´„äº†ï¼Œè«‹æ›ä¸€æ®µæ™‚é–“ã€‚";
     return;
   }
   if (requestConflicts(date, startTime, endTime)) {
-    $("#bookingError").textContent = "³o¬q®É¶¡¥¿¦b¼f®Ö©Î¤w¸g¦³¬ù¤F¡A½Ğ´«¤@¬q®É¶¡¡C";
+    $("#bookingError").textContent = "é€™æ®µæ™‚é–“æ­£åœ¨å¯©æ ¸æˆ–å·²ç¶“æœ‰ç´„äº†ï¼Œè«‹æ›ä¸€æ®µæ™‚é–“ã€‚";
     return;
   }
   const nextRequest = {
     id: createId("req"),
-    name: $("#bookingName").value.trim() || "ªB¤Í",
+    name: $("#bookingName").value.trim() || "æœ‹å‹",
     activityId: $("#bookingActivity").value,
     date,
     time: startTime,
@@ -1546,7 +1546,7 @@ $("#bookingForm").addEventListener("submit", async (event) => {
     if (functionError) {
       const { data: inserted, error: insertError } = await supabaseClient.from("invite_requests").insert(payload).select("*").single();
       if (insertError) {
-        $("#bookingError").textContent = "°e¥X¥¢±Ñ¡A½Ğµ¥¤@¤U¦A¸Õ¤@¦¸¡C";
+        $("#bookingError").textContent = "é€å‡ºå¤±æ•—ï¼Œè«‹ç­‰ä¸€ä¸‹å†è©¦ä¸€æ¬¡ã€‚";
         console.warn(insertError);
         return;
       }
@@ -1616,7 +1616,7 @@ document.body.addEventListener("click", async (event) => {
       saveData();
     }
     navigator.clipboard?.writeText(text);
-    adminReviewNotice = "¤w½Æ»s¤å¦r";
+    adminReviewNotice = "å·²è¤‡è£½æ–‡å­—";
     renderAdminRequestDialog();
     return;
   }
@@ -1624,7 +1624,7 @@ document.body.addEventListener("click", async (event) => {
   if (copyButton) {
     const text = copyButton.dataset.copyText;
     navigator.clipboard?.writeText(text);
-    adminReviewNotice = "¤w½Æ»s¤å¦r";
+    adminReviewNotice = "å·²è¤‡è£½æ–‡å­—";
     renderAdminRequestDialog();
     return;
   }
@@ -1636,10 +1636,10 @@ document.body.addEventListener("click", async (event) => {
   if (target.closest("[data-add-type]")) {
     const nextType = {
       id: createId("type"),
-      label: "·sÁÜ¬ùÃş«¬",
-      short: "ÁÜ¬ù",
+      label: "æ–°é‚€ç´„é¡å‹",
+      short: "é‚€ç´„",
       blocks: 1,
-      template: "{name}¡A§Ú¦¬¨ì§AªºÁÜ¬ù¤F¡C",
+      template: "{name}ï¼Œæˆ‘æ”¶åˆ°ä½ çš„é‚€ç´„äº†ã€‚",
     };
     activityTypes.push(nextType);
     selectedActivityTypeId = nextType.id;
