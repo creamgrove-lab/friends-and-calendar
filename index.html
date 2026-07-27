@@ -1,54 +1,54 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>妳想約約ㄇ</title>
-    <meta name="description" content="看看我哪天有空，想約我就從這裡偷偷送出邀請。" />
-    <meta property="og:title" content="妳想約約ㄇ" />
-    <meta property="og:description" content="看看我哪天有空，想約我就從這裡偷偷送出邀請。" />
+    <title>�p�Q�����v</title>
+    <meta name="description" content="�ݬݧڭ��Ѧ��šA�Q���ڴN�q�o�̰����e�X�ܽСC" />
+    <meta property="og:title" content="�p�Q�����v" />
+    <meta property="og:description" content="�ݬݧڭ��Ѧ��šA�Q���ڴN�q�o�̰����e�X�ܽСC" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="妳想約約ㄇ" />
-    <meta name="twitter:description" content="看看我哪天有空，想約我就從這裡偷偷送出邀請。" />
+    <meta name="twitter:title" content="�p�Q�����v" />
+    <meta name="twitter:description" content="�ݬݧڭ��Ѧ��šA�Q���ڴN�q�o�̰����e�X�ܽСC" />
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./style.css?v=glass-v26" />
+    <link rel="stylesheet" href="./style.css?v=glass-v30" />
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="#publicView" aria-label="回到公開行事曆">妳想約約ㄇ</a>
-      <nav class="icon-nav" aria-label="主要頁面">
-        <button class="icon-button top-action active" data-view="public" aria-label="首頁">首頁</button>
-        <button class="icon-button top-action" data-view="admin" aria-label="管理者">管理者</button>
-        <button class="icon-button top-action hidden" id="topLogoutButton" type="button">登出</button>
+      <a class="brand" href="#publicView" aria-label="�^�줽�}��ƾ�">�p�Q�����v</a>
+      <nav class="icon-nav" aria-label="�D�n����">
+        <button class="icon-button top-action active" data-view="public" aria-label="����">����</button>
+        <button class="icon-button top-action" data-view="admin" aria-label="�޲z��">�޲z��</button>
+        <button class="icon-button top-action hidden" id="topLogoutButton" type="button">�n�X</button>
       </nav>
     </header>
 
     <main class="site-shell">
       <section class="intro">
-        <button class="edit-pencil hidden" id="heroEditToggle" type="button" data-start-edit="hero" aria-label="編輯首頁文字">✎</button>
+        <button class="edit-pencil hidden" id="heroEditToggle" type="button" data-start-edit="hero" aria-label="�s�譺����r">?</button>
         <p class="eyebrow" id="heroEyebrow">for close friends</p>
-        <h1 id="heroTitle">妳想約約ㄇ</h1>
-        <p id="heroBody">看看我哪天有空。登入後可以約出門、來我家住，或單純留一句話給我。</p>
-        <div class="edit-actions section-edit-actions hidden" id="heroEditActions" aria-label="首頁文字編輯工具">
-          <button type="button" data-edit-action="restore" data-edit-group="hero" title="返回">↶</button>
-          <button type="button" data-edit-action="save" data-edit-group="hero" title="確認更新">✓</button>
-          <button type="button" data-edit-action="cancel" data-edit-group="hero" title="取消更新">×</button>
+        <h1 id="heroTitle">�p�Q�����v</h1>
+        <p id="heroBody">�ݬݧڭ��Ѧ��šC�n�J��i�H���X���B�ӧڮa���A�γ�¯d�@�y�ܵ��ڡC</p>
+        <div class="edit-actions section-edit-actions hidden" id="heroEditActions" aria-label="������r�s��u��">
+          <button type="button" data-edit-action="restore" data-edit-group="hero" title="��^">?</button>
+          <button type="button" data-edit-action="save" data-edit-group="hero" title="�T�{��s">?</button>
+          <button type="button" data-edit-action="cancel" data-edit-group="hero" title="������s">��</button>
         </div>
       </section>
 
       <section class="view public-layout" id="publicView">
         <div class="calendar-panel">
           <div class="month-head">
-            <button class="small-round" id="prevMonth" type="button" aria-label="上一個月">‹</button>
+            <button class="small-round" id="prevMonth" type="button" aria-label="�W�@�Ӥ�">?</button>
             <div>
               <p class="card-kicker">public calendar</p>
               <h2 id="monthTitle"></h2>
             </div>
-            <button class="small-round" id="nextMonth" type="button" aria-label="下一個月">›</button>
+            <button class="small-round" id="nextMonth" type="button" aria-label="�U�@�Ӥ�">?</button>
           </div>
           <div class="week-row" aria-hidden="true">
-            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+            <span>��</span><span>�@</span><span>�G</span><span>�T</span><span>�|</span><span>��</span><span>��</span>
           </div>
           <div class="month-grid" id="monthGrid"></div>
           <div id="dayDetail"></div>
@@ -56,16 +56,16 @@
 
         <aside class="soft-panel how-panel">
           <div class="how-tools">
-            <button class="eye-toggle" id="howEyeToggle" type="button" aria-label="開啟或隱藏留言板" aria-pressed="true">&#128065;</button>
-            <button class="edit-pencil hidden" id="howEditToggle" type="button" data-start-edit="how" aria-label="編輯留言板">✎</button>
+            <button class="eye-toggle" id="howEyeToggle" type="button" aria-label="�}�ҩ����ïd���O" aria-pressed="true">&#128065;</button>
+            <button class="edit-pencil hidden" id="howEditToggle" type="button" data-start-edit="how" aria-label="�s��d���O">?</button>
           </div>
           <p class="card-kicker" id="howKicker"></p>
           <h2 id="howTitle"></h2>
           <div id="howBody"></div>
-          <div class="edit-actions section-edit-actions hidden" id="howEditActions" aria-label="留言板編輯工具">
-            <button type="button" data-edit-action="restore" data-edit-group="how" title="返回">↶</button>
-            <button type="button" data-edit-action="save" data-edit-group="how" title="確認更新">✓</button>
-            <button type="button" data-edit-action="cancel" data-edit-group="how" title="取消更新">×</button>
+          <div class="edit-actions section-edit-actions hidden" id="howEditActions" aria-label="�d���O�s��u��">
+            <button type="button" data-edit-action="restore" data-edit-group="how" title="��^">?</button>
+            <button type="button" data-edit-action="save" data-edit-group="how" title="�T�{��s">?</button>
+            <button type="button" data-edit-action="cancel" data-edit-group="how" title="������s">��</button>
           </div>
         </aside>
 
@@ -73,8 +73,8 @@
 
       <section class="view hidden" id="adminView">
         <aside class="admin-menu">
-          <button class="active" data-admin-tab="requests">申請</button>
-          <button data-admin-tab="types">類型</button>
+          <button class="active" data-admin-tab="requests">�ӽ�</button>
+          <button data-admin-tab="types">����</button>
         </aside>
 
         <div class="admin-content">
@@ -82,7 +82,7 @@
             <div class="calendar-panel">
               <div class="section-heading">
                 <p class="card-kicker">admin</p>
-                <h2>待審核月曆</h2>
+                <h2>�ݼf�֤��</h2>
               </div>
               <div class="request-list" id="adminRequests"></div>
             </div>
@@ -92,7 +92,7 @@
             <div class="calendar-panel">
               <div class="section-heading">
                 <p class="card-kicker">manage</p>
-                <h2>目前類型</h2>
+                <h2>�ثe����</h2>
               </div>
               <div class="request-list" id="adminTypes"></div>
             </div>
@@ -107,30 +107,30 @@
         <div class="modal-head">
           <div>
             <p class="card-kicker">login</p>
-            <h2 id="loginTitle">輸入我給你的帳密</h2>
+            <h2 id="loginTitle">��J�ڵ��A���b�K</h2>
           </div>
-          <button class="small-round" id="closeLoginButton" type="button" aria-label="關閉登入視窗">×</button>
+          <button class="small-round" id="closeLoginButton" type="button" aria-label="�����n�J����">��</button>
         </div>
 
         <div id="loginFields">
           <label>
-            帳號
+            �b��
             <input id="loginUser" autocomplete="username" />
           </label>
           <label>
-            密碼
+            �K�X
             <input id="loginPassword" type="password" autocomplete="current-password" />
           </label>
           <p class="error-text" id="loginError"></p>
-          <button class="primary-button" type="submit">登入</button>
+          <button class="primary-button" type="submit">�n�J</button>
 
         </div>
 
         <div class="hidden" id="sessionBox">
           <p class="hint" id="sessionText"></p>
           <div class="button-row">
-            <button type="button" id="goMemberButton">前往頁面</button>
-            <button type="button" id="logoutButton">登出</button>
+            <button type="button" id="goMemberButton">�e������</button>
+            <button type="button" id="logoutButton">�n�X</button>
           </div>
         </div>
       </form>
@@ -141,42 +141,42 @@
         <div class="modal-head">
           <div>
             <p class="card-kicker">booking</p>
-            <h2>預約小窗</h2>
+            <h2>�w���p��</h2>
           </div>
-          <button class="small-round" id="closeBookingButton" type="button" aria-label="關閉預約小窗">×</button>
+          <button class="small-round" id="closeBookingButton" type="button" aria-label="�����w���p��">��</button>
         </div>
 
         <input id="bookingDate" type="hidden" />
-        <p class="selected-date">已選定的預約日期：<strong id="bookingDateText"></strong></p>
+        <p class="selected-date">�w��w���w������G<strong id="bookingDateText"></strong></p>
 
         <label>
-          公主的預約大名
-          <input id="bookingName" required placeholder="請輸入名字" />
+          ���D���w���j�W
+          <input id="bookingName" required placeholder="�п�J�W�r" />
         </label>
 
         <div class="booking-time-range">
           <label>
-            從幾點開始
+            �q�X�I�}�l
             <select id="bookingStartTime"></select>
           </label>
           <label>
-            結束時間
+            �����ɶ�
             <select id="bookingEndTime"></select>
           </label>
         </div>
-        <p class="hint" id="bookingTimeHint">請選擇想預約的一段時間。</p>
+        <p class="hint" id="bookingTimeHint">�п�ܷQ�w�����@�q�ɶ��C</p>
 <label>
-          你想做什ㄇ?
+          �A�Q�����v?
           <select id="bookingActivity"></select>
         </label>
 
         <label>
-          想跟我說
-          <textarea id="bookingMessage" placeholder="悄悄話、補充時間、想做什麼都可以寫。"></textarea>
+          �Q��ڻ�
+          <textarea id="bookingMessage" placeholder="�����ܡB�ɥR�ɶ��B�Q�����򳣥i�H�g�C"></textarea>
         </label>
 
         <p class="error-text" id="bookingError"></p>
-        <button class="primary-button" type="submit">送出預約申請</button>
+        <button class="primary-button" type="submit">�e�X�w���ӽ�</button>
       </form>
     </dialog>
 
@@ -185,19 +185,20 @@
         <div class="modal-head">
           <div>
             <p class="card-kicker">review</p>
-            <h2 id="adminRequestDialogTitle">審核邀約</h2>
+            <h2 id="adminRequestDialogTitle">�f���ܬ�</h2>
           </div>
-          <button class="small-round" id="closeAdminRequestButton" type="button" aria-label="關閉審核小窗">×</button>
+          <button class="small-round" id="closeAdminRequestButton" type="button" aria-label="�����f�֤p��">��</button>
         </div>
-        <p class="sync-notice hidden" id="adminRequestDialogNotice">已更新狀態</p>
+        <p class="sync-notice hidden" id="adminRequestDialogNotice">�w��s���A</p>
         <div class="request-list" id="adminRequestDialogBody"></div>
       </form>
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./app.js?v=glass-v26"></script>
+    <script src="./app.js?v=glass-v30"></script>
   </body>
 </html>
+
 
 
 
