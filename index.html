@@ -12,7 +12,7 @@
     <meta name="twitter:title" content="妳想約約ㄇ" />
     <meta name="twitter:description" content="看看我哪天有空，想約我就從這裡偷偷送出邀請。" />
     <link rel="icon" href="./favicon.svg" />
-    <link rel="stylesheet" href="./style.css?v=glass-v31" />
+    <link rel="stylesheet" href="./style.css?v=glass-v33" />
   </head>
   <body>
     <header class="topbar">
@@ -26,13 +26,13 @@
 
     <main class="site-shell">
       <section class="intro">
-        <button class="edit-pencil hidden" id="heroEditToggle" type="button" data-start-edit="hero" aria-label="編輯首頁文字">?</button>
+        <button class="edit-pencil hidden" id="heroEditToggle" type="button" data-start-edit="hero" aria-label="編輯首頁文字">&#9998;</button>
         <p class="eyebrow" id="heroEyebrow">for close friends</p>
         <h1 id="heroTitle">妳想約約ㄇ</h1>
         <p id="heroBody">看看我哪天有空。登入後可以約出門、來我家住，或單純留一句話給我。</p>
         <div class="edit-actions section-edit-actions hidden" id="heroEditActions" aria-label="首頁文字編輯工具">
-          <button type="button" data-edit-action="restore" data-edit-group="hero" title="返回">?</button>
-          <button type="button" data-edit-action="save" data-edit-group="hero" title="確認更新">?</button>
+          <button type="button" data-edit-action="restore" data-edit-group="hero" title="返回">&#8630;</button>
+          <button type="button" data-edit-action="save" data-edit-group="hero" title="確認更新">&#10003;</button>
           <button type="button" data-edit-action="cancel" data-edit-group="hero" title="取消更新">×</button>
         </div>
       </section>
@@ -40,12 +40,12 @@
       <section class="view public-layout" id="publicView">
         <div class="calendar-panel">
           <div class="month-head">
-            <button class="small-round" id="prevMonth" type="button" aria-label="上一個月">?</button>
+            <button class="small-round" id="prevMonth" type="button" aria-label="上一個月">&#8249;</button>
             <div>
               <p class="card-kicker">public calendar</p>
               <h2 id="monthTitle"></h2>
             </div>
-            <button class="small-round" id="nextMonth" type="button" aria-label="下一個月">?</button>
+            <button class="small-round" id="nextMonth" type="button" aria-label="下一個月">&#8250;</button>
           </div>
           <div class="week-row" aria-hidden="true">
             <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
@@ -57,14 +57,14 @@
         <aside class="soft-panel how-panel">
           <div class="how-tools">
             <button class="eye-toggle" id="howEyeToggle" type="button" aria-label="開啟或隱藏留言板" aria-pressed="true">&#128065;</button>
-            <button class="edit-pencil hidden" id="howEditToggle" type="button" data-start-edit="how" aria-label="編輯留言板">?</button>
+            <button class="edit-pencil hidden" id="howEditToggle" type="button" data-start-edit="how" aria-label="編輯留言板">&#9998;</button>
           </div>
           <p class="card-kicker" id="howKicker"></p>
           <h2 id="howTitle"></h2>
           <div id="howBody"></div>
           <div class="edit-actions section-edit-actions hidden" id="howEditActions" aria-label="留言板編輯工具">
-            <button type="button" data-edit-action="restore" data-edit-group="how" title="返回">?</button>
-            <button type="button" data-edit-action="save" data-edit-group="how" title="確認更新">?</button>
+            <button type="button" data-edit-action="restore" data-edit-group="how" title="返回">&#8630;</button>
+            <button type="button" data-edit-action="save" data-edit-group="how" title="確認更新">&#10003;</button>
             <button type="button" data-edit-action="cancel" data-edit-group="how" title="取消更新">×</button>
           </div>
         </aside>
@@ -195,7 +195,7 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="./app.js?v=glass-v31"></script>
+    <script src="./app.js?v=glass-v33"></script>
   </body>
 </html>
 

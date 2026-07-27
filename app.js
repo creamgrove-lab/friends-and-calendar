@@ -859,7 +859,10 @@ function renderMonth() {
     const hasBusyReview = !hasApprovedRequest && requests.some((request) => request.status === "change" || request.status === "declined");
     const canBook = !hasBusyReview && isDayBookable(base, key);
     const hasPublicContext = requests.some((request) => request.status !== "done");
-    const hasCustomScheduleNote = !canBook && !hasPublicContext && !!(base.memo || base.publicEvent || "").trim();
+    const defaultPublicStatus = statusText[base.status] || "";
+    const customPublicStatus = (base.publicStatus || "").trim();
+    const hasCustomPublicStatus = customPublicStatus && customPublicStatus !== defaultPublicStatus;
+    const hasCustomScheduleNote = !canBook && !hasPublicContext && (!!(base.memo || base.publicEvent || "").trim() || hasCustomPublicStatus);
     const actionAttribute = session?.role === "admin"
       ? `data-admin-date-key="${key}" aria-label="編輯 ${formatDate(key)}"`
       : `data-view-date="${key}" aria-label="查看 ${formatDate(key)} 的狀態"`;
@@ -1040,12 +1043,12 @@ function renderAdminRequestCalendar() {
   target.innerHTML = `
     <div class="admin-request-calendar">
       <div class="month-head compact">
-        <button class="small-round" id="adminRequestPrevMonth" type="button" aria-label="上一個月">?</button>
+        <button class="small-round" id="adminRequestPrevMonth" type="button" aria-label="上一個月">&#8249;</button>
         <div>
           <p class="card-kicker">review month</p>
           <h3>${year} 年 ${month + 1} 月</h3>
         </div>
-        <button class="small-round" id="adminRequestNextMonth" type="button" aria-label="下一個月">?</button>
+        <button class="small-round" id="adminRequestNextMonth" type="button" aria-label="下一個月">&#8250;</button>
       </div>
       <p class="admin-review-summary">${reviewCount ? `有 ${reviewCount} 筆需要你審核，紅點日期點開看。` : "這個月目前沒有待審申請。"}</p>
       <div class="week-row" aria-hidden="true">
