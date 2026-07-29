@@ -1967,3 +1967,27 @@ button.month-day {
   border-color: rgba(238, 103, 139, 0.48);
   background: rgba(255, 244, 248, 0.78);
 }
+
+/* glass-v39 booking copy polish */
+#bookingForm .selected-date {
+  display: block;
+  margin: 20px 0 2px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 151, 178, 0.36);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(255, 246, 235, 0.76), rgba(255, 232, 240, 0.58));
+  box-shadow: 0 12px 30px rgba(222, 134, 153, 0.12), inset 0 1px 0 rgba(255,255,255,0.72);
+  color: #765a50;
+  line-height: 1.55;
+}
+
+#bookingForm .selected-date strong {
+  color: #5f443c;
+  font-weight: 700;
+}
+
+#bookingTimeHint {
+  margin-top: 4px;
+  color: #8b746c;
+  font-size: 0.88rem;
+}
