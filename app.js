@@ -7,6 +7,7 @@ let cloudReady = false;
 let cloudSaving = false;
 let cloudSaveTimer = null;
 let lastCloudError = "";
+let bookingSubmitting = false;
 const statusText = {
   open: "請約我",
   partial: "請約我",
@@ -1325,23 +1326,32 @@ function clearRequestGeneratedCalendarText(day, request) {
 
 function syncDateRequestsToCalendar(dateKey, fallbackRequest = null) {
   const day = getCalendarDay(dateKey);
-  const approved = data.requests.filter((request) => request.date === dateKey && request.status === "approved");
+  const blockingRequests = data.requests.filter((request) => request.date === dateKey && request.status !== "declined" && request.status !== "done");
 
-  if (approved.length) {
-    approved.forEach((request) => {
+  if (blockingRequests.length) {
+    blockingRequests.forEach((request) => {
       day.requestSyncIds = [...new Set([...(day.requestSyncIds || []), request.id])];
     });
-    const reservedTimes = new Set(approved.flatMap((request) => reservedTimesForRequest(request)));
-    const baseTimes = sortTimes([...day.availableTimes, ...reservedTimes]);
+    const reservedSlots = blockingRequests.flatMap((request) => reservedTimesForRequest(request));
+    const reservedTimes = new Set(reservedSlots);
+    const baseTimes = sortTimes([...(day.availableTimes || []), ...reservedSlots]);
     const remainingTimes = baseTimes.filter((time) => !reservedTimes.has(time));
-    const mainRequest = approved[0];
+    const approved = blockingRequests.filter((request) => request.status === "approved");
+    const mainRequest = approved[0] || blockingRequests[0];
+
     day.availableTimes = remainingTimes;
     day.status = remainingTimes.length ? "partial" : "booked";
-    day.publicStatus = "今天已有約";
-    day.publicEvent = activityPublicEvent(mainRequest);
-    day.publicRequest = "目前收到來自公主的邀請。";
+    if (approved.length) {
+      day.publicStatus = "\u4eca\u5929\u5df2\u6709\u7d04";
+      day.publicEvent = activityPublicEvent(mainRequest);
+      day.publicRequest = "\u76ee\u524d\u6536\u5230\u4f86\u81ea\u516c\u4e3b\u7684\u9080\u8acb\u3002";
+    } else {
+      day.publicStatus = remainingTimes.length ? day.publicStatus || "\u8acb\u7d04\u6211" : "\u5be9\u6838\u9810\u7d04\u4e2d";
+      day.publicEvent = "";
+      day.publicRequest = "";
+    }
     day.publicRemaining = remainingTimes.length
-      ? `${remainingTimes.slice(0, 8).join("、")}${remainingTimes.length > 8 ? `，還有 ${remainingTimes.length - 8} 個時段` : ""}`
+      ? `${remainingTimes.slice(0, 8).join("\u3001")}${remainingTimes.length > 8 ? `\uff0c\u9084\u6709 ${remainingTimes.length - 8} \u500b\u6642\u6bb5` : ""}`
       : "no";
     return;
   }
@@ -1353,7 +1363,6 @@ function syncDateRequestsToCalendar(dateKey, fallbackRequest = null) {
   day.status = restoredTimes.length ? "partial" : "closed";
   clearRequestGeneratedCalendarText(day, fallbackRequest);
 }
-
 function releaseApprovedRequestFromCalendar(request) {
   syncDateRequestsToCalendar(request.date, request);
 }
@@ -1376,8 +1385,8 @@ async function deleteInviteRequest(requestId) {
   data.requests = data.requests.filter((item) => item.id !== request.id);
   syncDateRequestsToCalendar(request.date, request);
   recentlySyncedRequestId = "";
-  adminReviewNotice = "已刪除申請";
-  saveData({ cloud: false });
+  adminReviewNotice = "\u5df2\u522a\u9664\u7533\u8acb";
+  saveData();
   render();
   if ($("#adminRequestDialog")?.open) renderAdminRequestDialog();
 }
@@ -1505,65 +1514,79 @@ $("#monthGrid").addEventListener("click", (event) => {
 
 $("#bookingForm").addEventListener("submit", async (event) => {
   event.preventDefault();
-  const date = $("#bookingDate").value;
-  const startTime = $("#bookingStartTime").value;
-  const endTime = $("#bookingEndTime").value;
-  const requestedTimes = timesInBookingRange(startTime, endTime);
-  if (!requestedTimes.length) {
-    $("#bookingError").textContent = "請選擇一段可以預約的時間。";
-    return;
+  if (bookingSubmitting) return;
+  bookingSubmitting = true;
+  const submitButton = event.submitter || $("#bookingForm")?.querySelector('button[type="submit"]');
+  const submitText = submitButton?.textContent || "\u9001\u51fa\u9810\u7d04\u7533\u8acb";
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "\u9001\u51fa\u4e2d...";
   }
-  const availableSet = new Set(availableTimesForDate(date));
-  if (requestedTimes.some((time) => !availableSet.has(time))) {
-    $("#bookingError").textContent = "這段時間已經不能預約了，請換一段時間。";
-    return;
-  }
-  if (requestConflicts(date, startTime, endTime)) {
-    $("#bookingError").textContent = "這段時間正在審核或已經有約了，請換一段時間。";
-    return;
-  }
-  const nextRequest = {
-    id: createId("req"),
-    name: $("#bookingName").value.trim() || "朋友",
-    activityId: $("#bookingActivity").value,
-    date,
-    time: startTime,
-    endTime,
-    leaveAt: "",
-    message: $("#bookingMessage").value.trim(),
-    status: "pending",
-    sentStatus: "pending",
-    adminNote: "",
-    replyDraft: "",
-    sentReply: "",
-    sentAdminNote: "",
-    syncedAt: "",
-    createdAt: new Date().toISOString().slice(0, 10),
-    updatedAt: "",
-  };
-  let savedRequest = nextRequest;
-  if (supabaseClient) {
-    const payload = requestToRow(nextRequest);
-    delete payload.id;
-    const { data: functionData, error: functionError } = await supabaseClient.functions.invoke("create-invite-request", { body: payload });
-    if (functionError) {
-      const { data: inserted, error: insertError } = await supabaseClient.from("invite_requests").insert(payload).select("*").single();
-      if (insertError) {
-        $("#bookingError").textContent = "送出失敗，請等一下再試一次。";
-        console.warn(insertError);
+
+  try {
+    const date = $("#bookingDate").value;
+    const startTime = $("#bookingStartTime").value;
+    const endTime = $("#bookingEndTime").value;
+    const requestedTimes = timesInBookingRange(startTime, endTime);
+    if (!requestedTimes.length) {
+      $("#bookingError").textContent = "\u8acb\u9078\u64c7\u4e00\u6bb5\u53ef\u4ee5\u9810\u7d04\u7684\u6642\u9593\u3002";
+      return;
+    }
+    const availableSet = new Set(availableTimesForDate(date));
+    if (requestedTimes.some((time) => !availableSet.has(time))) {
+      $("#bookingError").textContent = "\u9019\u6bb5\u6642\u9593\u5df2\u7d93\u4e0d\u80fd\u9810\u7d04\u4e86\uff0c\u8acb\u63db\u4e00\u6bb5\u6642\u9593\u3002";
+      return;
+    }
+    if (requestConflicts(date, startTime, endTime)) {
+      $("#bookingError").textContent = "\u9019\u6bb5\u6642\u9593\u6b63\u5728\u5be9\u6838\u6216\u5df2\u7d93\u88ab\u7d04\u8d70\u4e86\uff0c\u8acb\u63db\u4e00\u6bb5\u6642\u9593\u3002";
+      return;
+    }
+    const nextRequest = {
+      id: createId("req"),
+      name: $("#bookingName").value.trim() || "\u670b\u53cb",
+      activityId: $("#bookingActivity").value,
+      date,
+      time: startTime,
+      endTime,
+      leaveAt: "",
+      message: $("#bookingMessage").value.trim(),
+      status: "pending",
+      sentStatus: "pending",
+      adminNote: "",
+      replyDraft: "",
+      sentReply: "",
+      sentAdminNote: "",
+      syncedAt: "",
+      createdAt: new Date().toISOString().slice(0, 10),
+      updatedAt: "",
+    };
+    let savedRequest = nextRequest;
+    if (supabaseClient) {
+      const payload = requestToRow(nextRequest);
+      delete payload.id;
+      const { data: functionData, error: functionError } = await supabaseClient.functions.invoke("create-invite-request", { body: payload });
+      if (functionError) {
+        $("#bookingError").textContent = "\u9001\u51fa\u5931\u6557\uff0c\u8acb\u7b49\u4e00\u4e0b\u518d\u8a66\u4e00\u6b21\u3002";
+        console.warn(functionError);
         return;
+      } else if (functionData?.request) {
+        savedRequest = requestFromRow(functionData.request);
       }
-      savedRequest = requestFromRow(inserted);
-    } else if (functionData?.request) {
-      savedRequest = requestFromRow(functionData.request);
+    }
+    if (!data.requests.some((request) => request.id === savedRequest.id)) data.requests.unshift(savedRequest);
+    const day = getCalendarDay(date);
+    if (day.status === "open") day.status = "partial";
+    day.availableTimes = availableTimesForDate(date, day);
+    saveData({ cloud: false });
+    $("#bookingDialog").close();
+    render();
+  } finally {
+    bookingSubmitting = false;
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = submitText;
     }
   }
-  data.requests.unshift(savedRequest);
-  const day = getCalendarDay(date);
-  if (day.status === "open") day.status = "partial";
-  saveData({ cloud: false });
-  $("#bookingDialog").close();
-  render();
 });
 document.body.addEventListener("click", async (event) => {
   const target = event.target;
