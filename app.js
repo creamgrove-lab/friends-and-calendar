@@ -363,7 +363,8 @@ async function loadCloudData() {
     activityTypes = data.activityTypes;
     cloudReady = true;
     lastCloudError = "";
-    saveData({ cloud: false });
+    if (session?.role === "admin" && repairBlockingRequestCalendarSync()) saveData();
+    else saveData({ cloud: false });
   } catch (error) {
     cloudReady = false;
     lastCloudError = error.message || "雲端資料讀取失敗";
@@ -1367,6 +1368,14 @@ function releaseApprovedRequestFromCalendar(request) {
   syncDateRequestsToCalendar(request.date, request);
 }
 
+function repairBlockingRequestCalendarSync() {
+  const dates = [...new Set(data.requests
+    .filter((request) => request.date && request.status !== "declined" && request.status !== "done")
+    .map((request) => request.date))];
+  if (!dates.length) return false;
+  dates.forEach((dateKey) => syncDateRequestsToCalendar(dateKey));
+  return true;
+}
 async function deleteInviteRequest(requestId) {
   const request = data.requests.find((item) => item.id === requestId);
   if (!request) return;
