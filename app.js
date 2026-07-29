@@ -654,15 +654,13 @@ function renderAdminDraftPreview(dateKey) {
     publicStatus: document.querySelector(`[data-admin-calendar-public-status="${dateKey}"]`)?.value || "",
     availableTimes: selectedAdminTimes(dateKey),
   };
-  const draftTimes = draftDay.status === "open" || draftDay.status === "partial" ? availableTimesForDate(dateKey, draftDay) : [];
+  const draftTimes = isAdminBookableStatus(draftDay.status) ? availableTimesForDate(dateKey, draftDay) : [];
   const preview = dayPublicDetail(draftDay, dateKey, summarizeRequests(dateKey), draftTimes);
-  const previewStatus = draftDay.publicStatus || preview.status;
-  const scheduleText = draftDay.memo || preview.event || preview.request || "";
   target.innerHTML = `
     <p class="card-kicker">front preview</p>
-    <p><strong>狀態：</strong>${escapeHtml(previewStatus)}</p>
-    ${scheduleText ? `<p><strong>我的行程安排：</strong>${escapeHtml(scheduleText)}</p>` : ""}
-    ${preview.remaining !== "no" ? `<p><strong>剩餘可約時間：</strong>${escapeHtml(preview.remaining)}</p>` : ""}
+    <p><strong>\u72c0\u614b\uff1a</strong>${escapeHtml(preview.status)}</p>
+    ${preview.schedule ? `<p><strong>\u6211\u7684\u884c\u7a0b\u5b89\u6392\uff1a</strong>${escapeHtml(preview.schedule)}</p>` : ""}
+    ${preview.remaining !== "no" ? `<p><strong>\u5269\u9918\u53ef\u7d04\u6642\u9593\uff1a</strong>${escapeHtml(preview.remaining)}</p>` : ""}
   `;
 }
 
@@ -864,7 +862,7 @@ function renderMonth() {
     const defaultPublicStatus = statusText[base.status] || "";
     const customPublicStatus = (base.publicStatus || "").trim();
     const hasCustomPublicStatus = customPublicStatus && customPublicStatus !== defaultPublicStatus;
-    const hasCustomScheduleNote = !canBook && !hasPublicContext && (!!(base.memo || base.publicEvent || "").trim() || hasCustomPublicStatus);
+    const hasCustomScheduleNote = !canBook && !hasPublicContext && (!!(base.memo || "").trim() || hasCustomPublicStatus);
     const actionAttribute = session?.role === "admin"
       ? `data-admin-date-key="${key}" aria-label="編輯 ${formatDate(key)}"`
       : `data-view-date="${key}" aria-label="查看 ${formatDate(key)} 的狀態"`;
@@ -920,45 +918,25 @@ function dayPublicDetail(day, dateKey, requests, availableTimes) {
   const waitingRequest = requests.find((request) => request.status === "pending");
   const hasBusyRequest = !approved && !!busyRequest;
   const hasWaitingRequest = !!waitingRequest;
-  const status =
+  const customStatus = (day.publicStatus || "").trim();
+  const fallbackStatus =
     approved
       ? bookedStatusText(approved)
-        : hasBusyRequest
-          ? "busy"
-          : hasWaitingRequest
-            ? requestStatusText[waitingRequest.status] || "申請中"
-          : availableTimes.length && day.status === "open"
-            ? "請約我"
-            : availableTimes.length
-              ? "請約我"
-              : day.status === "booked"
-                ? "有約"
-                : day.publicStatus || statusText[day.status] || day.status;
-  const event = approved
-    ? ""
-    : hasBusyRequest
-      ? ""
-      : waitingRequest
-        ? `${waitingRequest.name || "朋友"} · ${getActivity(waitingRequest.activityId)?.short || "邀約"}`
-      : day.memo || "";
-  const request =
-    approved
-      ? ""
       : hasBusyRequest
-        ? ""
+        ? "busy"
         : hasWaitingRequest
-          ? "目前有申請在等確認。"
-        : day.status === "booked"
-          ? "目前已有安排。"
+          ? requestStatusText[waitingRequest.status] || "\u5be9\u6838\u9810\u7d04\u4e2d"
           : availableTimes.length
-            ? "目前沒有邀約申請。"
-            : "";
+            ? "\u8acb\u7d04\u6211"
+            : statusText[day.status] || day.status;
+  const status = customStatus || fallbackStatus;
+  const schedule = (day.memo || "").trim();
   const remaining = hasBusyRequest
     ? "no"
     : availableTimes.length
-      ? `${availableTimes.slice(0, 8).join("、")}${availableTimes.length > 8 ? `，還有 ${availableTimes.length - 8} 個時段` : ""}`
+      ? `${availableTimes.slice(0, 8).join("\u3001")}${availableTimes.length > 8 ? `\uff0c\u9084\u6709 ${availableTimes.length - 8} \u500b\u6642\u6bb5` : ""}`
       : "no";
-  return { status, event, request, remaining };
+  return { status, schedule, remaining };
 }
 
 function renderDayDetail(dateKey) {
@@ -976,26 +954,13 @@ function renderDayDetail(dateKey) {
         <p class="card-kicker">date detail</p>
         <h3>${formatDate(dateKey)}</h3>
       </div>
-      <p><strong>狀態：</strong>${escapeHtml(publicDetail.status)}</p>
-      ${(publicDetail.event || publicDetail.request) ? `<p><strong>我的行程安排：</strong>${escapeHtml(publicDetail.event || publicDetail.request)}</p>` : ""}
-      ${publicDetail.remaining !== "no" ? `<p><strong>剩餘可約時間：</strong>${escapeHtml(publicDetail.remaining)}</p>` : ""}
-      ${availableTimes.length ? `<button class="primary-button" type="button" data-book-from-detail="${dateKey}">點我看其他時間</button>` : ""}
+      <p><strong>\u72c0\u614b\uff1a</strong>${escapeHtml(publicDetail.status)}</p>
+      ${publicDetail.schedule ? `<p><strong>\u6211\u7684\u884c\u7a0b\u5b89\u6392\uff1a</strong>${escapeHtml(publicDetail.schedule)}</p>` : ""}
+      ${publicDetail.remaining !== "no" ? `<p><strong>\u5269\u9918\u53ef\u7d04\u6642\u9593\uff1a</strong>${escapeHtml(publicDetail.remaining)}</p>` : ""}
+      ${availableTimes.length ? `<button class="primary-button" type="button" data-book-from-detail="${dateKey}">\u9ede\u6211\u770b\u5176\u4ed6\u6642\u9593</button>` : ""}
     </section>
   `;
 }
-
-function renderPublicRequests() {
-  if (!$("#friendRequests")) return;
-  const recent = data.requests.slice(0, 10);
-  $("#friendRequests").innerHTML = recent.length
-    ? renderRequests(recent, true)
-    : `<p class="empty-state">目前還沒有邀約。</p>`;
-}
-
-function getRequestsForDate(dateKey) {
-  return data.requests.filter((request) => request.date === dateKey);
-}
-
 function requestNeedsReview(request) {
   return request.status === "pending" || request.status === "change";
 }
