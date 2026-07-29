@@ -1,5 +1,5 @@
 const storageKey = "friend-invite-calendar-v4-blank-ranges";
-const scheduleResetKey = "friend-invite-calendar-glass-v13-schedule-reset";
+const scheduleResetKey = "friend-invite-calendar-glass-v38-schedule-reset";
 const supabaseUrl = "https://joqosgplspsfrtzcpfwm.supabase.co";
 const supabaseKey = "sb_publishable_CF0IXFM6pV8mI6f4MLA80g_EKSc2Tqi";
 const supabaseClient = window.supabase?.createClient(supabaseUrl, supabaseKey) || null;
@@ -1099,6 +1099,60 @@ function commitTypeEditor(typeId) {
   renderTypeEditor();
 }
 
+function dateKeyToLocalDate(dateKey) {
+  const [year, month, day] = String(dateKey || "").split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
+function dateKeysBetween(startKey, endKey) {
+  const start = dateKeyToLocalDate(startKey);
+  const end = dateKeyToLocalDate(endKey);
+  if (!start || !end) return [];
+  const from = start <= end ? start : end;
+  const to = start <= end ? end : start;
+  const keys = [];
+  const cursor = new Date(from);
+  while (cursor <= to && keys.length < 62) {
+    keys.push(toDateKey(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return keys;
+}
+
+function readAdminCalendarDraft(dateKey) {
+  const savedDay = getCalendarDay(dateKey);
+  const status = document.querySelector(`[data-admin-calendar-status="${dateKey}"]`)?.value || savedDay.status;
+  return {
+    status,
+    memo: document.querySelector(`[data-admin-calendar-memo="${dateKey}"]`)?.value || "",
+    publicStatus: document.querySelector(`[data-admin-calendar-public-status="${dateKey}"]`)?.value || "",
+    availableTimes: isAdminBookableStatus(status) ? selectedAdminTimes(dateKey) : [],
+  };
+}
+
+function writeCalendarDayFromDraft(dateKey, draft) {
+  const day = getCalendarDay(dateKey);
+  day.status = draft.status || day.status;
+  day.memo = draft.memo;
+  day.publicStatus = draft.publicStatus;
+  day.availableTimes = isAdminBookableStatus(day.status) ? [...draft.availableTimes] : [];
+  day.publicEvent = "";
+  day.publicRequest = "";
+  day.publicRemaining = "";
+}
+
+function applyAdminCalendarRange(dateKey) {
+  const start = document.querySelector(`[data-admin-range-start="${dateKey}"]`)?.value || dateKey;
+  const end = document.querySelector(`[data-admin-range-end="${dateKey}"]`)?.value || dateKey;
+  const keys = dateKeysBetween(start, end);
+  if (!keys.length) return;
+  const draft = readAdminCalendarDraft(dateKey);
+  keys.forEach((key) => writeCalendarDayFromDraft(key, draft));
+  adminCalendarNotice = `\u5df2\u5957\u7528\u5230 ${keys.length} \u5929`;
+  saveData();
+  renderMonth();
+}
 function renderAdminDayEditor(selector = "#dayDetail") {
   const target = $(selector);
   if (!target) return;
@@ -1140,6 +1194,18 @@ function renderAdminDayEditor(selector = "#dayDetail") {
         ${renderAdminTimePicker(selectedAdminDateKey, selectedDay)}
         <p class="hint ${isAdminBookableStatus(selectedDay.status) ? "" : "hidden"}" data-time-picker-hint="${selectedAdminDateKey}">點選時段膠囊即可開放或取消；也可以用快捷鍵一次選上午、下午、晚上或全天。</p>
         <section class="front-preview" data-admin-front-preview="${selectedAdminDateKey}"></section>
+        <section class="bulk-apply-panel">
+          <div>
+            <p class="card-kicker">apply range</p>
+            <h3>\u5957\u7528\u5230\u591a\u5929</h3>
+            <p class="hint">\u6703\u628a\u4e0a\u9762\u76ee\u524d\u586b\u597d\u7684\u72c0\u614b\u3001\u986f\u793a\u6587\u5b57\u3001\u884c\u7a0b\u5b89\u6392\u548c\u53ef\u7d04\u6642\u6bb5\u4e00\u8d77\u5957\u7528\u3002</p>
+          </div>
+          <div class="bulk-apply-fields">
+            <label>\u5f9e<input type="date" data-admin-range-start="${selectedAdminDateKey}" value="${selectedAdminDateKey}" /></label>
+            <label>\u5230<input type="date" data-admin-range-end="${selectedAdminDateKey}" value="${selectedAdminDateKey}" /></label>
+          </div>
+          <button class="secondary-button" type="button" data-apply-admin-calendar-range="${selectedAdminDateKey}">\u5957\u7528\u9019\u6bb5\u65e5\u671f</button>
+        </section>
         <button class="primary-button" type="button" data-confirm-admin-calendar="${selectedAdminDateKey}">確認更新公開日曆</button>
         <p class="sync-notice ${adminCalendarNotice ? "" : "hidden"}" id="adminCalendarSaved">${adminCalendarNotice || "已更新公開日曆"}</p>
       </section>
@@ -1148,19 +1214,8 @@ function renderAdminDayEditor(selector = "#dayDetail") {
 }
 
 function commitAdminCalendarEdits(dateKey) {
-  const day = getCalendarDay(dateKey);
-  const status = document.querySelector(`[data-admin-calendar-status="${dateKey}"]`)?.value;
-  const memo = document.querySelector(`[data-admin-calendar-memo="${dateKey}"]`)?.value || "";
-  const publicStatus = document.querySelector(`[data-admin-calendar-public-status="${dateKey}"]`)?.value || "";
-  const times = document.querySelector(`[data-admin-calendar-times="${dateKey}"]`)?.value || "";
-  day.status = status || day.status;
-  day.memo = memo;
-  day.publicStatus = publicStatus;
-  day.availableTimes = isAdminBookableStatus(day.status) ? parseTimesInput(times) : [];
-  day.publicEvent = "";
-  day.publicRequest = "";
-  day.publicRemaining = "";
-  adminCalendarNotice = "已更新公開日曆";
+  writeCalendarDayFromDraft(dateKey, readAdminCalendarDraft(dateKey));
+  adminCalendarNotice = "\u5df2\u66f4\u65b0\u516c\u958b\u65e5\u66c6";
   saveData();
   renderMonth();
 }
@@ -1698,6 +1753,11 @@ document.body.addEventListener("click", async (event) => {
     return;
   }
 
+  const applyAdminRangeButton = target.closest("[data-apply-admin-calendar-range]");
+  if (applyAdminRangeButton) {
+    applyAdminCalendarRange(applyAdminRangeButton.dataset.applyAdminCalendarRange);
+    return;
+  }
   const confirmAdminCalendarButton = target.closest("[data-confirm-admin-calendar]");
   if (confirmAdminCalendarButton) {
     commitAdminCalendarEdits(confirmAdminCalendarButton.dataset.confirmAdminCalendar);

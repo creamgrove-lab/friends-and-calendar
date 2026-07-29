@@ -1919,3 +1919,51 @@ button.month-day {
   color: #9d554e;
 }
 
+
+/* glass-v38 bulk apply calendar range */
+.bulk-apply-panel {
+  display: grid;
+  gap: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.62), rgba(255,246,250,0.36));
+  box-shadow: 0 14px 34px rgba(168, 111, 98, 0.1), inset 0 1px 0 rgba(255,255,255,0.72);
+  padding: 13px;
+}
+
+.bulk-apply-panel h3,
+.bulk-apply-panel p {
+  margin-bottom: 0;
+}
+
+.bulk-apply-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.bulk-apply-fields label {
+  gap: 0.3rem;
+  font-size: 0.78rem;
+}
+
+.bulk-apply-fields input {
+  min-width: 0;
+  padding: 0.62rem 0.66rem;
+  font-size: 0.84rem;
+}
+
+.secondary-button {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(219, 171, 184, 0.44);
+  background: rgba(255, 255, 255, 0.6);
+  color: #8b5f65;
+  font-weight: 500;
+}
+
+.secondary-button:hover {
+  border-color: rgba(238, 103, 139, 0.48);
+  background: rgba(255, 244, 248, 0.78);
+}
