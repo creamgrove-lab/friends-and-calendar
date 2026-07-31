@@ -1103,10 +1103,6 @@ function renderAdminRequestCalendar() {
     return requestDate.getFullYear() === year && requestDate.getMonth() === month;
   });
   const reviewCount = monthRequests.filter(requestNeedsReview).length;
-  const monthRequestListHtml = monthRequests.length
-    ? monthRequests.map(adminSingleRequestCardHtml).join("")
-    : `<p class="empty-state">這個月目前沒有申請。</p>`;
-
   for (let i = 0; i < firstDay.getDay(); i += 1) cells.push(`<div class="month-day blank"></div>`);
 
   for (let day = 1; day <= lastDay.getDate(); day += 1) {
@@ -1114,9 +1110,7 @@ function renderAdminRequestCalendar() {
     const key = toDateKey(date);
     const requests = allRequests.filter((request) => request.date === key && request.status !== "done");
     const needsReview = requests.some(requestNeedsReview);
-    const approvedCount = requests.filter((request) => request.status === "approved").length;
     const requestCount = requests.length;
-    const tag = needsReview ? "待審" : approvedCount ? "OK" : requestCount ? "已處理" : "";
     const element = requestCount ? "button" : "div";
     const buttonAttrs = requestCount ? `type="button" data-review-date="${key}" aria-label="查看 ${formatDate(key)} 的申請"` : "";
 
@@ -1124,7 +1118,6 @@ function renderAdminRequestCalendar() {
       <${element} ${buttonAttrs} class="month-day request-review-day ${needsReview ? "needs-review" : ""} ${requestCount ? "has-request" : "no-request"} ${selectedAdminRequestDateKey === key ? "selected" : ""}">
         <span class="day-number">${day}</span>
         ${needsReview ? `<span class="review-dot" aria-hidden="true"></span>` : ""}
-        ${tag ? `<span class="review-day-tag">${tag}${requestCount > 1 ? ` ${requestCount}` : ""}</span>` : ""}
       </${element}>
     `);
   }
@@ -1144,8 +1137,6 @@ function renderAdminRequestCalendar() {
         <span>\u65e5</span><span>\u4e00</span><span>\u4e8c</span><span>\u4e09</span><span>\u56db</span><span>\u4e94</span><span>\u516d</span>
       </div>
       <div class="month-grid admin-review-grid">${cells.join("")}</div>
-      ${selectedAdminRequestDateKey ? `<section class="inline-review-panel"><p class="card-kicker">selected request</p><h3>${formatDate(selectedAdminRequestDateKey)} 的申請</h3><div class="request-list">${adminRequestCardsHtml(selectedAdminRequestDateKey)}</div></section>` : ""}
-      <section class="inline-review-panel month-review-list"><p class="card-kicker">month requests</p><h3>本月申請列表</h3><p class="admin-review-summary">點日期會展開該日申請，也可以直接在這裡審核。</p><div class="request-list">${monthRequestListHtml}</div></section>
     </div>
   `;
 
