@@ -1,5 +1,5 @@
 const storageKey = "friend-invite-calendar-v4-blank-ranges";
-const scheduleResetKey = "friend-invite-calendar-glass-v38-schedule-reset";
+const scheduleResetKey = "friend-invite-calendar-glass-v40-schedule-reset";
 const supabaseUrl = "https://joqosgplspsfrtzcpfwm.supabase.co";
 const supabaseKey = "sb_publishable_CF0IXFM6pV8mI6f4MLA80g_EKSc2Tqi";
 const supabaseClient = window.supabase?.createClient(supabaseUrl, supabaseKey) || null;
@@ -975,6 +975,7 @@ function declinedReply() {
 
 function renderAdminRequestCalendar() {
   const target = $("#adminRequests");
+  if (!target) return;
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
   const firstDay = new Date(year, month, 1);
@@ -996,30 +997,32 @@ function renderAdminRequestCalendar() {
     const needsReview = requests.some(requestNeedsReview);
     const approvedCount = requests.filter((request) => request.status === "approved").length;
     const requestCount = requests.length;
-    const tag = needsReview ? "待審" : approvedCount ? "OK" : requestCount ? "已處理" : "";
+    const tag = needsReview ? "\u5f85\u5be9" : approvedCount ? "OK" : requestCount ? "\u5df2\u8655\u7406" : "";
+    const element = requestCount ? "button" : "div";
+    const buttonAttrs = requestCount ? `type="button" data-review-date="${key}" aria-label="\u67e5\u770b ${formatDate(key)} \u7684\u7533\u8acb"` : "";
 
     cells.push(`
-      <${requestCount ? "button" : "div"} ${requestCount ? "type=\"button\"" : ""} class="month-day request-review-day ${needsReview ? "needs-review" : ""} ${requestCount ? "has-request" : "no-request"}" ${requestCount ? `data-review-date="${key}" aria-label="查看 ${formatDate(key)} 的申請"` : ""}>
+      <${element} ${buttonAttrs} class="month-day request-review-day ${needsReview ? "needs-review" : ""} ${requestCount ? "has-request" : "no-request"}">
         <span class="day-number">${day}</span>
         ${needsReview ? `<span class="review-dot" aria-hidden="true"></span>` : ""}
         ${tag ? `<span class="review-day-tag">${tag}${requestCount > 1 ? ` ${requestCount}` : ""}</span>` : ""}
-      </${requestCount ? "button" : "div"}>
+      </${element}>
     `);
   }
 
   target.innerHTML = `
     <div class="admin-request-calendar">
       <div class="month-head compact">
-        <button class="small-round" id="adminRequestPrevMonth" type="button" aria-label="上一個月">&#8249;</button>
+        <button class="small-round" id="adminRequestPrevMonth" type="button" aria-label="\u4e0a\u4e00\u500b\u6708">&#8249;</button>
         <div>
           <p class="card-kicker">review month</p>
-          <h3>${year} 年 ${month + 1} 月</h3>
+          <h3>${year} \u5e74 ${month + 1} \u6708</h3>
         </div>
-        <button class="small-round" id="adminRequestNextMonth" type="button" aria-label="下一個月">&#8250;</button>
+        <button class="small-round" id="adminRequestNextMonth" type="button" aria-label="\u4e0b\u4e00\u500b\u6708">&#8250;</button>
       </div>
-      <p class="admin-review-summary">${reviewCount ? `有 ${reviewCount} 筆需要你審核，紅點日期點開看。` : "這個月目前沒有待審申請。"}</p>
+      <p class="admin-review-summary">${reviewCount ? `\u6709 ${reviewCount} \u7b46\u9084\u5728\u7b49\u4f60\u5be9\u6838\u3002` : "\u76ee\u524d\u6c92\u6709\u5f85\u5be9\u6838\u7684\u7533\u8acb\u3002"}</p>
       <div class="week-row" aria-hidden="true">
-        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+        <span>\u65e5</span><span>\u4e00</span><span>\u4e8c</span><span>\u4e09</span><span>\u56db</span><span>\u4e94</span><span>\u516d</span>
       </div>
       <div class="month-grid admin-review-grid">${cells.join("")}</div>
     </div>
@@ -1038,14 +1041,16 @@ function saveActivityTypes() {
 }
 
 function renderTypeEditor() {
+  const target = $("#adminTypes");
+  if (!target) return;
   if (!activityTypes.some((type) => type.id === selectedActivityTypeId)) selectedActivityTypeId = activityTypes[0]?.id || "";
   const selectedType = activityTypes.find((type) => type.id === selectedActivityTypeId);
   const isUsed = selectedType ? data.requests.some((request) => request.activityId === selectedType.id) : false;
-  $("#adminTypes").innerHTML = `
+  target.innerHTML = `
     <div class="type-toolbar">
-      <button class="primary-button" type="button" data-add-type>新增類型</button>
+      <button class="primary-button" type="button" data-add-type>\u65b0\u589e\u985e\u578b</button>
     </div>
-    <div class="type-picker" aria-label="選擇要編輯的類型">
+    <div class="type-picker" aria-label="\u9078\u64c7\u8981\u7de8\u8f2f\u7684\u985e\u578b">
       ${activityTypes
         .map((type) => `<button type="button" class="${type.id === selectedActivityTypeId ? "active" : ""}" data-select-type="${type.id}">${escapeHtml(type.short || type.label)}</button>`)
         .join("")}
@@ -1059,30 +1064,30 @@ function renderTypeEditor() {
                 <p class="card-kicker">editing type</p>
                 <h3>${escapeHtml(selectedType.label)}</h3>
               </div>
-              <button class="danger-button" type="button" data-delete-type="${selectedType.id}" ${isUsed ? "disabled" : ""}>刪除</button>
+              <button class="danger-button" type="button" data-delete-type="${selectedType.id}" ${isUsed ? "disabled" : ""}>\u522a\u9664</button>
             </div>
             <label>
-              類型名稱
+              \u985e\u578b\u540d\u7a31
               <input data-type-draft-field="label" value="${escapeHtml(selectedType.label)}" />
             </label>
             <label>
-              月曆短標籤
-              <input data-type-draft-field="short" value="${escapeHtml(selectedType.short)}" />
+              \u6708\u66c6\u77ed\u6a19\u7c64
+              <input data-type-draft-field="short" value="${escapeHtml(selectedType.short || "")}" />
             </label>
             <label>
-              預估時數
-              <input data-type-draft-field="blocks" type="number" min="1" value="${selectedType.blocks}" />
+              \u9810\u7d04\u6642\u6bb5\u6578
+              <input data-type-draft-field="blocks" type="number" min="1" value="${selectedType.blocks || 1}" />
             </label>
             <label>
-              OK 後公版回覆
-              <textarea data-type-draft-field="template">${escapeHtml(selectedType.template)}</textarea>
+              OK \u516c\u7248\u56de\u8986
+              <textarea data-type-draft-field="template">${escapeHtml(selectedType.template || "")}</textarea>
             </label>
-            ${isUsed ? `<p class="hint">已有申請使用中，暫時不能刪除。</p>` : ""}
-            <button class="primary-button" type="button" data-confirm-type="${selectedType.id}">確認更新類型</button>
-            <p class="sync-notice ${typeEditorNotice ? "" : "hidden"}">${typeEditorNotice || "已更新類型"}</p>
+            ${isUsed ? `<p class="hint">\u5df2\u6709\u7533\u8acb\u4f7f\u7528\u4e2d\uff0c\u66ab\u6642\u4e0d\u80fd\u522a\u9664\u3002</p>` : ""}
+            <button class="primary-button" type="button" data-confirm-type="${selectedType.id}">\u78ba\u8a8d\u66f4\u65b0\u985e\u578b</button>
+            <p class="sync-notice ${typeEditorNotice ? "" : "hidden"}">${typeEditorNotice || "\u5df2\u66f4\u65b0\u985e\u578b"}</p>
           </article>
         `
-        : `<p class="empty-state">目前沒有類型。</p>`
+        : `<p class="empty-state">\u76ee\u524d\u6c92\u6709\u985e\u578b\u3002</p>`
     }
   `;
 }
