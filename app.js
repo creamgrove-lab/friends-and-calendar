@@ -1380,9 +1380,9 @@ function adminSingleRequestCardHtml(request) {
       <p class="request-meta">${formatDate(request.date)} · ${formatRequestTimeRange(request)}</p>
       <p>${escapeHtml(request.message || "沒有留言")}</p>
       <div class="button-row review-actions">
-        <button class="review-action ok ${request.status === "approved" ? "active" : ""}" type="button" data-review-action="approved" data-review-id="${request.id}">OK</button>
-        <button class="review-action discuss ${request.status === "change" ? "active" : ""}" type="button" data-review-action="change" data-review-id="${request.id}">需討論</button>
-        <button class="review-action no ${request.status === "declined" ? "active" : ""}" type="button" data-review-action="declined" data-review-id="${request.id}">NO</button>
+        <button class="review-action ok ${request.status === "approved" ? "active" : ""}" type="button" data-review-action="approved" data-review-id="${request.id}" onclick="event.stopPropagation(); updateRequestReview('${request.id}','approved')">OK</button>
+        <button class="review-action discuss ${request.status === "change" ? "active" : ""}" type="button" data-review-action="change" data-review-id="${request.id}" onclick="event.stopPropagation(); updateRequestReview('${request.id}','change')">需討論</button>
+        <button class="review-action no ${request.status === "declined" ? "active" : ""}" type="button" data-review-action="declined" data-review-id="${request.id}" onclick="event.stopPropagation(); updateRequestReview('${request.id}','declined')">NO</button>
       </div>
       <div class="reply-template-list">
         ${replyChoices
@@ -1529,9 +1529,11 @@ async function deleteInviteRequest(requestId) {
 function updateRequestReview(requestId, nextStatus) {
   const request = data.requests.find((item) => item.id === requestId);
   if (!request) return;
+  selectedAdminRequestDateKey = request.date;
   if (nextStatus === "approved" && requestConflicts(request.date, request.time, inferredRequestEndTime(request), request.id, ["approved"])) {
     adminReviewNotice = "這個時段已經有 OK 的申請了";
-    renderAdminRequestDialog();
+    renderAdminRequestCalendar();
+    if ($("#adminRequestDialog")?.open) renderAdminRequestDialog();
     return;
   }
 
@@ -1553,10 +1555,10 @@ function updateRequestReview(requestId, nextStatus) {
   syncDateRequestsToCalendar(request.date, request);
 
   saveData();
-  render();
-  renderAdminRequestDialog();
+  renderAdminRequestCalendar();
+  renderMonth();
+  if ($("#adminRequestDialog")?.open) renderAdminRequestDialog();
 }
-
 function openBookingDialog(dateKey) {
   const day = getCalendarDay(dateKey);
   if (!isDayBookable(day, dateKey)) return;
@@ -2011,6 +2013,8 @@ async function initApp() {
 }
 
 initApp();
+
+
 
 
 
