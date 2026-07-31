@@ -754,6 +754,13 @@ function dayVisualStatus(day, requests) {
   return day.status;
 }
 
+function showAdminRequestsTab() {
+  document.querySelectorAll(".admin-menu button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.adminTab === "requests");
+  });
+  document.querySelectorAll(".admin-tab").forEach((tab) => tab.classList.add("hidden"));
+  $("#adminRequestsTab")?.classList.remove("hidden");
+}
 function showView(view) {
   if (view === "admin" && session?.role !== "admin") {
     $("#loginDialog").showModal();
@@ -768,6 +775,7 @@ function showView(view) {
   });
   render();
   if (view === "admin") {
+    showAdminRequestsTab();
     renderAdmin();
     const shouldRefreshRequests = Date.now() - adminRequestsLastFetched > 15000;
     if (shouldRefreshRequests) refreshAdminRequests({ silent: true });
@@ -1045,7 +1053,7 @@ function renderAdminRequestCalendar() {
     const requestCount = requests.length;
     const tag = needsReview ? "待審" : approvedCount ? "OK" : requestCount ? "已處理" : "";
     const element = requestCount ? "button" : "div";
-    const buttonAttrs = requestCount ? `type="button" data-review-date="${key}" aria-label="查看 ${formatDate(key)} 的申請"` : "";
+    const buttonAttrs = requestCount ? `type="button" data-review-date="${key}" onclick="openAdminRequestDialog('${key}')" aria-label="查看 ${formatDate(key)} 的申請"` : "";
 
     cells.push(`
       <${element} ${buttonAttrs} class="month-day request-review-day ${needsReview ? "needs-review" : ""} ${requestCount ? "has-request" : "no-request"}">
@@ -1579,7 +1587,7 @@ $("#loginForm").addEventListener("submit", async (event) => {
   $("#loginError").textContent = "";
   $("#loginDialog").close();
   await loadCloudData();
-  showView("public");
+  showView("admin");
 });
 
 async function logoutAdmin() {
@@ -1703,6 +1711,13 @@ $("#bookingForm").addEventListener("submit", async (event) => {
     }
   }
 });
+document.addEventListener("click", (event) => {
+  const reviewDayButton = event.target.closest?.("[data-review-date]");
+  if (!reviewDayButton) return;
+  event.preventDefault();
+  event.stopPropagation();
+  openAdminRequestDialog(reviewDayButton.dataset.reviewDate);
+}, true);
 document.body.addEventListener("click", async (event) => {
   const target = event.target;
   const startEditButton = target.closest("[data-start-edit]");
@@ -1977,6 +1992,8 @@ async function initApp() {
 }
 
 initApp();
+
+
 
 
 
