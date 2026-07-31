@@ -7,6 +7,8 @@ let cloudReady = false;
 let cloudSaving = false;
 let cloudSaveTimer = null;
 let lastCloudError = "";
+let lastAdminRequestError = "";
+let adminRequestsLoading = false;
 let bookingSubmitting = false;
 const statusText = {
   open: "請約我",
@@ -355,8 +357,12 @@ async function loadCloudData() {
 
     if (session?.role === "admin") {
       const requestsResult = await supabaseClient.from("invite_requests").select("*").order("created_at", { ascending: false });
-      if (requestsResult.error) throw requestsResult.error;
-      next.requests = (requestsResult.data || []).map(requestFromRow);
+      if (requestsResult.error) {
+        lastAdminRequestError = requestsResult.error.message || "待審核申請讀取失敗";
+      } else {
+        lastAdminRequestError = "";
+        next.requests = (requestsResult.data || []).map(requestFromRow);
+      }
     }
 
     data = normalizeData(next);
@@ -380,6 +386,25 @@ function queueCloudSave() {
   }, 700);
 }
 
+async function refreshAdminRequests() {
+  if (session?.role !== "admin" || !supabaseClient) return;
+  adminRequestsLoading = true;
+  renderAdminRequestCalendar();
+  try {
+    const result = await supabaseClient.from("invite_requests").select("*").order("created_at", { ascending: false });
+    if (result.error) throw result.error;
+    data.requests = (result.data || []).map(requestFromRow);
+    lastAdminRequestError = "";
+    saveData({ cloud: false });
+  } catch (error) {
+    lastAdminRequestError = error.message || "待審核申請讀取失敗";
+    console.warn(lastAdminRequestError, error);
+  } finally {
+    adminRequestsLoading = false;
+    renderAdminRequestCalendar();
+    renderMonth();
+  }
+}
 async function saveCloudData() {
   if (!supabaseClient || !cloudReady || cloudSaving) return;
   cloudSaving = true;
@@ -737,7 +762,10 @@ function showView(view) {
     button.classList.toggle("active", button.dataset.view === view);
   });
   render();
-  if (view === "admin") renderAdmin();
+  if (view === "admin") {
+    renderAdmin();
+    refreshAdminRequests();
+  }
 }
 
 function safeRenderPart(label, callback) {
@@ -990,7 +1018,8 @@ function renderAdminRequestCalendar() {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const cells = [];
-  const monthRequests = data.requests.filter((request) => {
+  const allRequests = Array.isArray(data.requests) ? data.requests : [];
+  const monthRequests = allRequests.filter((request) => {
     if (!request.date) return false;
     const requestDate = new Date(`${request.date}T00:00:00`);
     return requestDate.getFullYear() === year && requestDate.getMonth() === month;
@@ -1002,7 +1031,7 @@ function renderAdminRequestCalendar() {
   for (let day = 1; day <= lastDay.getDate(); day += 1) {
     const date = new Date(year, month, day);
     const key = toDateKey(date);
-    const requests = getRequestsForDate(key);
+    const requests = allRequests.filter((request) => request.date === key && request.status !== "done");
     const needsReview = requests.some(requestNeedsReview);
     const approvedCount = requests.filter((request) => request.status === "approved").length;
     const requestCount = requests.length;
@@ -1029,7 +1058,8 @@ function renderAdminRequestCalendar() {
         </div>
         <button class="small-round" id="adminRequestNextMonth" type="button" aria-label="\u4e0b\u4e00\u500b\u6708">&#8250;</button>
       </div>
-      <p class="admin-review-summary">${reviewCount ? `\u6709 ${reviewCount} \u7b46\u9084\u5728\u7b49\u4f60\u5be9\u6838\u3002` : "\u76ee\u524d\u6c92\u6709\u5f85\u5be9\u6838\u7684\u7533\u8acb\u3002"}</p>
+      <p class="admin-review-summary">${adminRequestsLoading ? "正在讀取待審核申請..." : lastAdminRequestError ? `讀取失敗：${escapeHtml(lastAdminRequestError)}` : reviewCount ? `有 ${reviewCount} 筆還在等你審核。` : "目前沒有待審核的申請。"}</p>
+      <button class="soft-button" type="button" data-refresh-admin-requests>${adminRequestsLoading ? "讀取中..." : "重新整理申請"}</button>
       <div class="week-row" aria-hidden="true">
         <span>\u65e5</span><span>\u4e00</span><span>\u4e8c</span><span>\u4e09</span><span>\u56db</span><span>\u4e94</span><span>\u516d</span>
       </div>
@@ -1765,6 +1795,11 @@ document.body.addEventListener("click", async (event) => {
     renderTypeEditor();
     return;
   }
+  const refreshAdminButton = target.closest("[data-refresh-admin-requests]");
+  if (refreshAdminButton) {
+    refreshAdminRequests();
+    return;
+  }
   const timePresetButton = target.closest("[data-time-preset]");
   if (timePresetButton) {
     setAdminTimeSelection(timePresetButton.dataset.timeDate, presetTimes(timePresetButton.dataset.timePreset));
@@ -1910,7 +1945,10 @@ document.querySelectorAll(".admin-menu button").forEach((button) => {
     button.classList.add("active");
     document.querySelectorAll(".admin-tab").forEach((tab) => tab.classList.add("hidden"));
     $(`#admin${button.dataset.adminTab[0].toUpperCase()}${button.dataset.adminTab.slice(1)}Tab`)?.classList.remove("hidden");
-    if (button.dataset.adminTab === "requests") renderAdminRequestCalendar();
+    if (button.dataset.adminTab === "requests") {
+      renderAdminRequestCalendar();
+      refreshAdminRequests();
+    }
     if (button.dataset.adminTab === "types") renderTypeEditor();
   });
 });
@@ -1922,6 +1960,7 @@ async function initApp() {
 }
 
 initApp();
+
 
 
 
