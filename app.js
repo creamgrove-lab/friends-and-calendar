@@ -77,6 +77,7 @@ let adminRequestMonthTouched = false;
 let lastAdminMonthNavAt = 0;
 let lastReviewActionKey = '';
 let lastReviewActionAt = 0;
+const pendingReviewSaveIds = new Set();
 let selectedDateKey = "";
 let selectedAdminDateKey = "";
 let selectedAdminRequestDateKey = "";
@@ -341,6 +342,26 @@ function requestToRow(request) {
   return row;
 }
 
+function mergePendingReviewRequests(incomingRequests) {
+  if (!pendingReviewSaveIds.size) return incomingRequests;
+  const localPending = new Map(
+    data.requests
+      .filter((request) => pendingReviewSaveIds.has(request.id))
+      .map((request) => [request.id, request])
+  );
+  const merged = incomingRequests.map((request) => localPending.get(request.id) || request);
+  localPending.forEach((request, id) => {
+    if (!merged.some((item) => item.id === id)) merged.unshift(request);
+  });
+  return merged;
+}
+
+async function saveRequestReviewToCloud(request) {
+  if (!supabaseClient || !cloudReady || !isUuid(request.id)) return;
+  const result = await supabaseClient.from("invite_requests").upsert(requestToRow(request), { onConflict: "id" });
+  if (result.error) throw result.error;
+}
+
 async function loadCloudData() {
   if (!supabaseClient) return;
   try {
@@ -367,7 +388,7 @@ async function loadCloudData() {
         lastAdminRequestError = requestsResult.error.message || "待審核申請讀取失敗";
       } else {
         lastAdminRequestError = "";
-        next.requests = (requestsResult.data || []).map(requestFromRow);
+        next.requests = mergePendingReviewRequests((requestsResult.data || []).map(requestFromRow));
       }
     }
 
@@ -400,7 +421,7 @@ async function refreshAdminRequests(options = {}) {
   try {
     const result = await supabaseClient.from("invite_requests").select("*").order("created_at", { ascending: false });
     if (result.error) throw result.error;
-    data.requests = (result.data || []).map(requestFromRow);
+    data.requests = mergePendingReviewRequests((result.data || []).map(requestFromRow));
     lastAdminRequestError = "";
     adminRequestsLastFetched = Date.now();
     saveData({ cloud: false });
@@ -801,6 +822,9 @@ function safeRenderPart(label, callback) {
   }
 }
 
+function renderPublicRequests() {
+}
+
 function render() {
   safeRenderPart("login", renderLogin);
   safeRenderPart("intro", renderIntro);
@@ -1066,11 +1090,12 @@ function declinedReply() {
 function renderAdminRequestCalendar() {
   const target = $("#adminRequests");
   if (!target) return;
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
+  const allRequests = Array.isArray(data.requests) ? data.requests : [];
+  syncAdminRequestMonthToRequests(allRequests);
+  const year = adminRequestMonth.getFullYear();
+  const month = adminRequestMonth.getMonth();
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
-  const allRequests = Array.isArray(data.requests) ? data.requests : [];
   const cells = [];
   const monthRequests = allRequests.filter((request) => {
     if (!request.date) return false;
@@ -1093,7 +1118,7 @@ function renderAdminRequestCalendar() {
     const requestCount = requests.length;
     const tag = needsReview ? "待審" : approvedCount ? "OK" : requestCount ? "已處理" : "";
     const element = requestCount ? "button" : "div";
-    const buttonAttrs = requestCount ? `type="button" data-review-date="${key}" onpointerup="selectAdminRequestDate('${key}')" onclick="selectAdminRequestDate('${key}')" aria-label="查看 ${formatDate(key)} 的申請"` : "";
+    const buttonAttrs = requestCount ? `type="button" data-review-date="${key}" aria-label="查看 ${formatDate(key)} 的申請"` : "";
 
     cells.push(`
       <${element} ${buttonAttrs} class="month-day request-review-day ${needsReview ? "needs-review" : ""} ${requestCount ? "has-request" : "no-request"} ${selectedAdminRequestDateKey === key ? "selected" : ""}">
@@ -1107,12 +1132,12 @@ function renderAdminRequestCalendar() {
   target.innerHTML = `
     <div class="admin-request-calendar">
       <div class="month-head compact">
-        <button class="small-round" id="adminRequestPrevMonth" type="button" onpointerup="goAdminRequestMonth(-1)" onclick="goAdminRequestMonth(-1)" aria-label="\u4e0a\u4e00\u500b\u6708">&#8249;</button>
+        <button class="small-round" id="adminRequestPrevMonth" type="button" data-admin-request-month-nav="-1" aria-label="\u4e0a\u4e00\u500b\u6708">&#8249;</button>
         <div>
           <p class="card-kicker">review month</p>
           <h3>${year} \u5e74 ${month + 1} \u6708</h3>
         </div>
-        <button class="small-round" id="adminRequestNextMonth" type="button" onpointerup="goAdminRequestMonth(1)" onclick="goAdminRequestMonth(1)" aria-label="\u4e0b\u4e00\u500b\u6708">&#8250;</button>
+        <button class="small-round" id="adminRequestNextMonth" type="button" data-admin-request-month-nav="1" aria-label="\u4e0b\u4e00\u500b\u6708">&#8250;</button>
       </div>
       <p class="admin-review-summary">${adminRequestsLoading ? "正在讀取待審核申請..." : lastAdminRequestError ? `讀取失敗：${escapeHtml(lastAdminRequestError)}` : reviewCount ? `有 ${reviewCount} 筆還在等你審核。` : "目前沒有待審核的申請。"}</p>
       <div class="week-row" aria-hidden="true">
@@ -1435,6 +1460,12 @@ function adminSingleRequestCardHtml(request) {
     </article>
   `;
 }
+function getRequestsForDate(dateKey) {
+  return (Array.isArray(data.requests) ? data.requests : [])
+    .filter((request) => request.date === dateKey && request.status !== "done")
+    .sort((a, b) => (a.time || "").localeCompare(b.time || "") || (a.createdAt || "").localeCompare(b.createdAt || ""));
+}
+
 function adminRequestCardsHtml(dateKey) {
   const requests = getRequestsForDate(dateKey);
   return requests.length
@@ -1451,10 +1482,7 @@ function renderAdminRequestDialog() {
 }
 
 function selectAdminRequestDate(dateKey) {
-  selectedAdminRequestDateKey = dateKey;
-  adminReviewNotice = "";
-  renderAdminRequestCalendar();
-  scrollToAdminRequests(".inline-review-panel");
+  openAdminRequestDialog(dateKey);
 }
 
 function goAdminRequestMonth(delta) {
@@ -1474,10 +1502,15 @@ function reviewRequestAction(requestId, nextStatus) {
   if (actionKey === lastReviewActionKey && now - lastReviewActionAt < 220) return;
   lastReviewActionKey = actionKey;
   lastReviewActionAt = now;
-  updateRequestReview(requestId, nextStatus);
+  void updateRequestReview(requestId, nextStatus);
 }
 function openAdminRequestDialog(dateKey) {
-  selectAdminRequestDate(dateKey);
+  selectedAdminRequestDateKey = dateKey;
+  adminReviewNotice = "";
+  renderAdminRequestCalendar();
+  renderAdminRequestDialog();
+  const dialog = $("#adminRequestDialog");
+  if (dialog && !dialog.open) dialog.showModal();
 }
 function syncApprovedRequestToCalendar(request) {
   const day = getCalendarDay(request.date);
@@ -1579,7 +1612,7 @@ async function deleteInviteRequest(requestId) {
   render();
   if ($("#adminRequestDialog")?.open) renderAdminRequestDialog();
 }
-function updateRequestReview(requestId, nextStatus) {
+async function updateRequestReview(requestId, nextStatus) {
   const request = data.requests.find((item) => item.id === requestId);
   if (!request) return;
   selectedAdminRequestDateKey = request.date;
@@ -1607,10 +1640,28 @@ function updateRequestReview(requestId, nextStatus) {
 
   syncDateRequestsToCalendar(request.date, request);
 
-  saveData();
+  const shouldSaveReviewToCloud = Boolean(supabaseClient && cloudReady && isUuid(request.id));
+  if (shouldSaveReviewToCloud) pendingReviewSaveIds.add(request.id);
+
+  saveData({ cloud: false });
   renderAdminRequestCalendar();
   renderMonth();
   if ($("#adminRequestDialog")?.open) renderAdminRequestDialog();
+
+  if (!shouldSaveReviewToCloud) return;
+  try {
+    await saveRequestReviewToCloud(request);
+    adminReviewNotice = "已同步狀態";
+  } catch (error) {
+    adminReviewNotice = `雲端更新失敗：${error.message || "請再試一次"}`;
+    console.warn(adminReviewNotice, error);
+  } finally {
+    pendingReviewSaveIds.delete(request.id);
+    saveData({ cloud: false });
+    renderAdminRequestCalendar();
+    renderMonth();
+    if ($("#adminRequestDialog")?.open) renderAdminRequestDialog();
+  }
 }
 function openBookingDialog(dateKey) {
   const day = getCalendarDay(dateKey);
@@ -1806,18 +1857,9 @@ document.body.addEventListener("click", async (event) => {
     applyEditAction(editAction.dataset.editGroup, editAction.dataset.editAction);
     return;
   }
-  if (target.closest("#adminRequestPrevMonth")) {
-    currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
-    selectedAdminRequestDateKey = "";
-    render();
-    refreshAdminRequests({ silent: true, force: true });
-    return;
-  }
-  if (target.closest("#adminRequestNextMonth")) {
-    currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
-    selectedAdminRequestDateKey = "";
-    render();
-    refreshAdminRequests({ silent: true, force: true });
+  const adminMonthNavButton = target.closest("[data-admin-request-month-nav]");
+  if (adminMonthNavButton) {
+    goAdminRequestMonth(adminMonthNavButton.dataset.adminRequestMonthNav);
     return;
   }
   const reviewDayButton = target.closest("[data-review-date]");
@@ -2061,6 +2103,9 @@ document.querySelectorAll(".admin-menu button").forEach((button) => {
 });
 
 window.openAdminRequestDialog = openAdminRequestDialog;
+window.selectAdminRequestDate = selectAdminRequestDate;
+window.goAdminRequestMonth = goAdminRequestMonth;
+window.reviewRequestAction = reviewRequestAction;
 window.updateRequestReview = updateRequestReview;
 async function initApp() {
   await hydrateSession();
@@ -2069,6 +2114,12 @@ async function initApp() {
 }
 
 initApp();
+
+
+
+
+
+
 
 
 
