@@ -1,5 +1,5 @@
 const storageKey = "friend-invite-calendar-v4-blank-ranges";
-const scheduleResetKey = "friend-invite-calendar-glass-v40-schedule-reset";
+const scheduleResetKey = "friend-invite-calendar-glass-v41-schedule-reset";
 const supabaseUrl = "https://joqosgplspsfrtzcpfwm.supabase.co";
 const supabaseKey = "sb_publishable_CF0IXFM6pV8mI6f4MLA80g_EKSc2Tqi";
 const supabaseClient = window.supabase?.createClient(supabaseUrl, supabaseKey) || null;
@@ -1031,10 +1031,34 @@ function renderAdminRequestCalendar() {
 
 function renderAdmin() {
   if (session?.role !== "admin") return;
-  renderAdminRequestCalendar();
-  renderTypeEditor();
+  ensureActivityTypes();
+  try {
+    renderAdminRequestCalendar();
+  } catch (error) {
+    console.warn("renderAdminRequestCalendar failed", error);
+    const target = $("#adminRequests");
+    if (target) target.innerHTML = `<p class="empty-state">\u5be9\u6838\u6708\u66c6\u8f09\u5165\u5931\u6557\uff0c\u8acb\u91cd\u65b0\u6574\u7406\u518d\u8a66\u3002</p>`;
+  }
+  try {
+    renderTypeEditor();
+  } catch (error) {
+    console.warn("renderTypeEditor failed", error);
+    const target = $("#adminTypes");
+    if (target) target.innerHTML = `<p class="empty-state">\u985e\u578b\u8f09\u5165\u5931\u6557\uff0c\u8acb\u91cd\u65b0\u6574\u7406\u518d\u8a66\u3002</p>`;
+  }
 }
 
+function ensureActivityTypes() {
+  if (!Array.isArray(activityTypes) || !activityTypes.length) {
+    activityTypes = structuredClone(defaultActivityTypes);
+  }
+  if (!Array.isArray(data.activityTypes) || !data.activityTypes.length) {
+    data.activityTypes = activityTypes;
+  }
+  if (!activityTypes.some((type) => type.id === selectedActivityTypeId)) {
+    selectedActivityTypeId = activityTypes[0]?.id || "";
+  }
+}
 function saveActivityTypes() {
   data.activityTypes = activityTypes;
   saveData();
@@ -1043,7 +1067,7 @@ function saveActivityTypes() {
 function renderTypeEditor() {
   const target = $("#adminTypes");
   if (!target) return;
-  if (!activityTypes.some((type) => type.id === selectedActivityTypeId)) selectedActivityTypeId = activityTypes[0]?.id || "";
+  ensureActivityTypes();
   const selectedType = activityTypes.find((type) => type.id === selectedActivityTypeId);
   const isUsed = selectedType ? data.requests.some((request) => request.activityId === selectedType.id) : false;
   target.innerHTML = `
@@ -1875,7 +1899,9 @@ document.querySelectorAll(".admin-menu button").forEach((button) => {
     document.querySelectorAll(".admin-menu button").forEach((item) => item.classList.remove("active"));
     button.classList.add("active");
     document.querySelectorAll(".admin-tab").forEach((tab) => tab.classList.add("hidden"));
-    $(`#admin${button.dataset.adminTab[0].toUpperCase()}${button.dataset.adminTab.slice(1)}Tab`).classList.remove("hidden");
+    $(`#admin${button.dataset.adminTab[0].toUpperCase()}${button.dataset.adminTab.slice(1)}Tab`)?.classList.remove("hidden");
+    if (button.dataset.adminTab === "requests") renderAdminRequestCalendar();
+    if (button.dataset.adminTab === "types") renderTypeEditor();
   });
 });
 
