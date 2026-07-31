@@ -1056,7 +1056,7 @@ function renderAdminRequestCalendar() {
     const buttonAttrs = requestCount ? `type="button" data-review-date="${key}" onclick="openAdminRequestDialog('${key}')" aria-label="查看 ${formatDate(key)} 的申請"` : "";
 
     cells.push(`
-      <${element} ${buttonAttrs} class="month-day request-review-day ${needsReview ? "needs-review" : ""} ${requestCount ? "has-request" : "no-request"}">
+      <${element} ${buttonAttrs} class="month-day request-review-day ${needsReview ? "needs-review" : ""} ${requestCount ? "has-request" : "no-request"} ${selectedAdminRequestDateKey === key ? "selected" : ""}">
         <span class="day-number">${day}</span>
         ${needsReview ? `<span class="review-dot" aria-hidden="true"></span>` : ""}
         ${tag ? `<span class="review-day-tag">${tag}${requestCount > 1 ? ` ${requestCount}` : ""}</span>` : ""}
@@ -1080,6 +1080,7 @@ function renderAdminRequestCalendar() {
         <span>\u65e5</span><span>\u4e00</span><span>\u4e8c</span><span>\u4e09</span><span>\u56db</span><span>\u4e94</span><span>\u516d</span>
       </div>
       <div class="month-grid admin-review-grid">${cells.join("")}</div>
+      ${selectedAdminRequestDateKey ? `<section class="inline-review-panel"><p class="card-kicker">selected request</p><h3>${formatDate(selectedAdminRequestDateKey)} 的申請</h3><div class="request-list">${adminRequestCardsHtml(selectedAdminRequestDateKey)}</div></section>` : ""}
     </div>
   `;
 
@@ -1353,13 +1354,9 @@ function renderRequests(requests, readonly) {
     .join("");
 }
 
-function renderAdminRequestDialog() {
-  if (!selectedAdminRequestDateKey) return;
-  const requests = getRequestsForDate(selectedAdminRequestDateKey);
-  $("#adminRequestDialogTitle").textContent = `${formatDate(selectedAdminRequestDateKey)} 的申請`;
-  $("#adminRequestDialogNotice").classList.toggle("hidden", !adminReviewNotice);
-  $("#adminRequestDialogNotice").textContent = adminReviewNotice || "已更新狀態";
-  $("#adminRequestDialogBody").innerHTML = requests.length
+function adminRequestCardsHtml(dateKey) {
+  const requests = getRequestsForDate(dateKey);
+  return requests.length
     ? requests
         .map((request) => {
           const activity = getActivity(request.activityId);
@@ -1406,13 +1403,26 @@ function renderAdminRequestDialog() {
     : `<p class="empty-state">這天沒有申請。</p>`;
 }
 
+function renderAdminRequestDialog() {
+  if (!selectedAdminRequestDateKey) return;
+  $("#adminRequestDialogTitle").textContent = `${formatDate(selectedAdminRequestDateKey)} 的申請`;
+  $("#adminRequestDialogNotice").classList.toggle("hidden", !adminReviewNotice);
+  $("#adminRequestDialogNotice").textContent = adminReviewNotice || "已更新狀態";
+  $("#adminRequestDialogBody").innerHTML = adminRequestCardsHtml(selectedAdminRequestDateKey);
+}
+
 function openAdminRequestDialog(dateKey) {
   selectedAdminRequestDateKey = dateKey;
   adminReviewNotice = "";
+  renderAdminRequestCalendar();
   renderAdminRequestDialog();
-  $("#adminRequestDialog").showModal();
+  try {
+    const dialog = $("#adminRequestDialog");
+    if (!dialog.open) dialog.showModal();
+  } catch (error) {
+    document.querySelector(".inline-review-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
-
 function syncApprovedRequestToCalendar(request) {
   const day = getCalendarDay(request.date);
   day.requestSyncIds = [...new Set([...(day.requestSyncIds || []), request.id])];
@@ -1740,11 +1750,17 @@ document.body.addEventListener("click", async (event) => {
   }
   if (target.closest("#adminRequestPrevMonth")) {
     currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+    selectedAdminRequestDateKey = "";
     render();
+    refreshAdminRequests({ silent: true, force: true });
+    return;
   }
   if (target.closest("#adminRequestNextMonth")) {
     currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+    selectedAdminRequestDateKey = "";
     render();
+    refreshAdminRequests({ silent: true, force: true });
+    return;
   }
   const reviewDayButton = target.closest("[data-review-date]");
   if (reviewDayButton) {
@@ -1992,6 +2008,7 @@ async function initApp() {
 }
 
 initApp();
+
 
 
 
