@@ -1056,7 +1056,7 @@ function renderAdminRequestCalendar() {
     const requestCount = requests.length;
     const tag = needsReview ? "待審" : approvedCount ? "OK" : requestCount ? "已處理" : "";
     const element = requestCount ? "button" : "div";
-    const buttonAttrs = requestCount ? `type="button" data-review-date="${key}" onclick="openAdminRequestDialog('${key}')" aria-label="查看 ${formatDate(key)} 的申請"` : "";
+    const buttonAttrs = requestCount ? `type="button" data-review-date="${key}" onclick="event.stopPropagation(); openAdminRequestDialog('${key}')" aria-label="查看 ${formatDate(key)} 的申請"` : "";
 
     cells.push(`
       <${element} ${buttonAttrs} class="month-day request-review-day ${needsReview ? "needs-review" : ""} ${requestCount ? "has-request" : "no-request"} ${selectedAdminRequestDateKey === key ? "selected" : ""}">
@@ -1417,14 +1417,14 @@ function renderAdminRequestDialog() {
 function openAdminRequestDialog(dateKey) {
   selectedAdminRequestDateKey = dateKey;
   adminReviewNotice = "";
-  renderAdminRequestCalendar();
   renderAdminRequestDialog();
   try {
     const dialog = $("#adminRequestDialog");
-    if (!dialog.open) dialog.showModal();
+    if (dialog && !dialog.open) dialog.showModal();
   } catch (error) {
     document.querySelector(".inline-review-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+  renderAdminRequestCalendar();
 }
 function syncApprovedRequestToCalendar(request) {
   const day = getCalendarDay(request.date);
@@ -2006,6 +2006,8 @@ document.querySelectorAll(".admin-menu button").forEach((button) => {
   });
 });
 
+window.openAdminRequestDialog = openAdminRequestDialog;
+window.updateRequestReview = updateRequestReview;
 async function initApp() {
   await hydrateSession();
   await loadCloudData();
@@ -2013,6 +2015,7 @@ async function initApp() {
 }
 
 initApp();
+
 
 
 
