@@ -761,6 +761,11 @@ function showAdminRequestsTab() {
   document.querySelectorAll(".admin-tab").forEach((tab) => tab.classList.add("hidden"));
   $("#adminRequestsTab")?.classList.remove("hidden");
 }
+function scrollToAdminRequests(selector = "#adminRequestsTab") {
+  requestAnimationFrame(() => {
+    document.querySelector(selector)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
 function showView(view) {
   if (view === "admin" && session?.role !== "admin") {
     $("#loginDialog").showModal();
@@ -779,6 +784,7 @@ function showView(view) {
     renderAdmin();
     const shouldRefreshRequests = Date.now() - adminRequestsLastFetched > 15000;
     if (shouldRefreshRequests) refreshAdminRequests({ silent: true });
+    scrollToAdminRequests();
   }
 }
 
@@ -1078,13 +1084,12 @@ function renderAdminRequestCalendar() {
         <button class="small-round" id="adminRequestNextMonth" type="button" aria-label="\u4e0b\u4e00\u500b\u6708">&#8250;</button>
       </div>
       <p class="admin-review-summary">${adminRequestsLoading ? "正在讀取待審核申請..." : lastAdminRequestError ? `讀取失敗：${escapeHtml(lastAdminRequestError)}` : reviewCount ? `有 ${reviewCount} 筆還在等你審核。` : "目前沒有待審核的申請。"}</p>
-      <button class="soft-button" type="button" data-refresh-admin-requests>${adminRequestsLoading ? "讀取中..." : "重新整理申請"}</button>
       <div class="week-row" aria-hidden="true">
         <span>\u65e5</span><span>\u4e00</span><span>\u4e8c</span><span>\u4e09</span><span>\u56db</span><span>\u4e94</span><span>\u516d</span>
       </div>
       <div class="month-grid admin-review-grid">${cells.join("")}</div>
       ${selectedAdminRequestDateKey ? `<section class="inline-review-panel"><p class="card-kicker">selected request</p><h3>${formatDate(selectedAdminRequestDateKey)} 的申請</h3><div class="request-list">${adminRequestCardsHtml(selectedAdminRequestDateKey)}</div></section>` : ""}
-      <section class="inline-review-panel month-review-list"><p class="card-kicker">month requests</p><h3>本月申請列表</h3><p class="admin-review-summary">不用點紅點，可以直接在這裡審核。</p><div class="request-list">${monthRequestListHtml}</div></section>
+      <section class="inline-review-panel month-review-list"><p class="card-kicker">month requests</p><h3>本月申請列表</h3><p class="admin-review-summary">點日期會展開該日申請，也可以直接在這裡審核。</p><div class="request-list">${monthRequestListHtml}</div></section>
     </div>
   `;
 
@@ -1417,14 +1422,8 @@ function renderAdminRequestDialog() {
 function openAdminRequestDialog(dateKey) {
   selectedAdminRequestDateKey = dateKey;
   adminReviewNotice = "";
-  renderAdminRequestDialog();
-  try {
-    const dialog = $("#adminRequestDialog");
-    if (dialog && !dialog.open) dialog.showModal();
-  } catch (error) {
-    document.querySelector(".inline-review-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
   renderAdminRequestCalendar();
+  scrollToAdminRequests(".inline-review-panel");
 }
 function syncApprovedRequestToCalendar(request) {
   const day = getCalendarDay(request.date);
@@ -2001,6 +2000,7 @@ document.querySelectorAll(".admin-menu button").forEach((button) => {
     if (button.dataset.adminTab === "requests") {
       renderAdminRequestCalendar();
       refreshAdminRequests({ silent: true });
+      scrollToAdminRequests();
     }
     if (button.dataset.adminTab === "types") renderTypeEditor();
   });
@@ -2015,6 +2015,9 @@ async function initApp() {
 }
 
 initApp();
+
+
+
 
 
 
