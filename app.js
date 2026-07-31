@@ -1041,6 +1041,9 @@ function renderAdminRequestCalendar() {
     return requestDate.getFullYear() === year && requestDate.getMonth() === month;
   });
   const reviewCount = monthRequests.filter(requestNeedsReview).length;
+  const monthRequestListHtml = monthRequests.length
+    ? monthRequests.map(adminSingleRequestCardHtml).join("")
+    : `<p class="empty-state">這個月目前沒有申請。</p>`;
 
   for (let i = 0; i < firstDay.getDay(); i += 1) cells.push(`<div class="month-day blank"></div>`);
 
@@ -1081,6 +1084,7 @@ function renderAdminRequestCalendar() {
       </div>
       <div class="month-grid admin-review-grid">${cells.join("")}</div>
       ${selectedAdminRequestDateKey ? `<section class="inline-review-panel"><p class="card-kicker">selected request</p><h3>${formatDate(selectedAdminRequestDateKey)} 的申請</h3><div class="request-list">${adminRequestCardsHtml(selectedAdminRequestDateKey)}</div></section>` : ""}
+      <section class="inline-review-panel month-review-list"><p class="card-kicker">month requests</p><h3>本月申請列表</h3><p class="admin-review-summary">不用點紅點，可以直接在這裡審核。</p><div class="request-list">${monthRequestListHtml}</div></section>
     </div>
   `;
 
@@ -1354,52 +1358,51 @@ function renderRequests(requests, readonly) {
     .join("");
 }
 
+function adminSingleRequestCardHtml(request) {
+  const activity = getActivity(request.activityId);
+  const replyChoices = [
+    { status: "approved", label: "OK 公版", text: buildReply(request) },
+    { status: "change", label: "待討論公版", text: discussionReply(request) },
+    { status: "declined", label: "婉拒公版", text: declinedReply(request) },
+  ];
+  return `
+    <article class="request-card review-card ${request.status}">
+      <div class="request-topline">
+        <div>
+          <p class="card-kicker">${activity?.label || "邀約"}</p>
+          <h3>${escapeHtml(request.name)} · ${requestStatusText[request.status] || request.status}</h3>
+        </div>
+        <div class="review-card-tools">
+          <span>${formatRequestTimeRange(request)}</span>
+          <button class="delete-request-button" type="button" data-delete-request="${request.id}" aria-label="刪除 ${escapeHtml(request.name)} 的申請">刪除</button>
+        </div>
+      </div>
+      <p class="request-meta">${formatDate(request.date)} · ${formatRequestTimeRange(request)}</p>
+      <p>${escapeHtml(request.message || "沒有留言")}</p>
+      <div class="button-row review-actions">
+        <button class="review-action ok ${request.status === "approved" ? "active" : ""}" type="button" data-review-action="approved" data-review-id="${request.id}">OK</button>
+        <button class="review-action discuss ${request.status === "change" ? "active" : ""}" type="button" data-review-action="change" data-review-id="${request.id}">需討論</button>
+        <button class="review-action no ${request.status === "declined" ? "active" : ""}" type="button" data-review-action="declined" data-review-id="${request.id}">NO</button>
+      </div>
+      <div class="reply-template-list">
+        ${replyChoices
+          .filter((choice) => request.status === choice.status)
+          .map((choice) => `
+            <div class="copy-box reply-template active">
+              <p class="card-kicker">${choice.label}</p>
+              <textarea data-review-reply="${request.id}">${escapeHtml(request.replyDraft || choice.text)}</textarea>
+              <button type="button" data-copy-reply="${request.id}">複製</button>
+            </div>
+          `).join("")}
+      </div>
+      ${recentlySyncedRequestId === request.id ? `<p class="sync-notice">已更新狀態</p>` : ""}
+    </article>
+  `;
+}
 function adminRequestCardsHtml(dateKey) {
   const requests = getRequestsForDate(dateKey);
   return requests.length
-    ? requests
-        .map((request) => {
-          const activity = getActivity(request.activityId);
-          const replyChoices = [
-            { status: "approved", label: "OK 公版", text: buildReply(request) },
-            { status: "change", label: "待討論公版", text: discussionReply(request) },
-            { status: "declined", label: "婉拒公版", text: declinedReply(request) },
-          ];
-          return `
-            <article class="request-card review-card ${request.status}">
-              <div class="request-topline">
-                <div>
-                  <p class="card-kicker">${activity?.label || "邀約"}</p>
-                  <h3>${escapeHtml(request.name)} · ${requestStatusText[request.status] || request.status}</h3>
-                </div>
-                <div class="review-card-tools">
-                  <span>${formatRequestTimeRange(request)}</span>
-                  <button class="delete-request-button" type="button" data-delete-request="${request.id}" aria-label="刪除 ${escapeHtml(request.name)} 的申請">刪除</button>
-                </div>
-              </div>
-              <p class="request-meta">${formatDate(request.date)} · ${formatRequestTimeRange(request)}</p>
-              <p>${escapeHtml(request.message || "沒有留言")}</p>
-              <div class="button-row review-actions">
-                <button class="review-action ok ${request.status === "approved" ? "active" : ""}" type="button" data-review-action="approved" data-review-id="${request.id}">OK</button>
-                <button class="review-action discuss ${request.status === "change" ? "active" : ""}" type="button" data-review-action="change" data-review-id="${request.id}">需討論</button>
-                <button class="review-action no ${request.status === "declined" ? "active" : ""}" type="button" data-review-action="declined" data-review-id="${request.id}">NO</button>
-              </div>
-              <div class="reply-template-list">
-                ${replyChoices
-                  .filter((choice) => request.status === choice.status)
-                  .map((choice) => `
-                    <div class="copy-box reply-template active">
-                      <p class="card-kicker">${choice.label}</p>
-                      <textarea data-review-reply="${request.id}">${escapeHtml(request.replyDraft || choice.text)}</textarea>
-                      <button type="button" data-copy-reply="${request.id}">複製</button>
-                    </div>
-                  `).join("")}
-              </div>
-              ${recentlySyncedRequestId === request.id ? `<p class="sync-notice">已更新狀態</p>` : ""}
-            </article>
-          `;
-        })
-        .join("")
+    ? requests.map(adminSingleRequestCardHtml).join("")
     : `<p class="empty-state">這天沒有申請。</p>`;
 }
 
@@ -2008,6 +2011,8 @@ async function initApp() {
 }
 
 initApp();
+
+
 
 
 
