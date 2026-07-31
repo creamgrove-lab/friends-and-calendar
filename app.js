@@ -1,4 +1,4 @@
-const storageKey = "friend-invite-calendar-v4-blank-ranges";
+﻿const storageKey = "friend-invite-calendar-v4-blank-ranges";
 const scheduleResetKey = "friend-invite-calendar-glass-v41-schedule-reset";
 const supabaseUrl = "https://joqosgplspsfrtzcpfwm.supabase.co";
 const supabaseKey = "sb_publishable_CF0IXFM6pV8mI6f4MLA80g_EKSc2Tqi";
@@ -737,15 +737,24 @@ function showView(view) {
     button.classList.toggle("active", button.dataset.view === view);
   });
   render();
+  if (view === "admin") renderAdmin();
+}
+
+function safeRenderPart(label, callback) {
+  try {
+    callback();
+  } catch (error) {
+    console.warn(`${label} render failed`, error);
+  }
 }
 
 function render() {
-  renderLogin();
-  renderIntro();
-  renderHowItWorks();
-  renderMonth();
-  renderPublicRequests();
-  renderAdmin();
+  safeRenderPart("login", renderLogin);
+  safeRenderPart("intro", renderIntro);
+  safeRenderPart("how it works", renderHowItWorks);
+  safeRenderPart("month", renderMonth);
+  safeRenderPart("public requests", renderPublicRequests);
+  safeRenderPart("admin", renderAdmin);
 }
 
 function renderLogin() {
@@ -1060,6 +1069,7 @@ function ensureActivityTypes() {
   }
 }
 function saveActivityTypes() {
+  ensureActivityTypes();
   data.activityTypes = activityTypes;
   saveData();
 }
@@ -1912,6 +1922,7 @@ async function initApp() {
 }
 
 initApp();
+
 
 
 
