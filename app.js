@@ -9,6 +9,7 @@ let cloudSaveTimer = null;
 let lastCloudError = "";
 let lastAdminRequestError = "";
 let adminRequestsLoading = false;
+let adminRequestsLastFetched = 0;
 let bookingSubmitting = false;
 const statusText = {
   open: "請約我",
@@ -386,15 +387,17 @@ function queueCloudSave() {
   }, 700);
 }
 
-async function refreshAdminRequests() {
-  if (session?.role !== "admin" || !supabaseClient) return;
+async function refreshAdminRequests(options = {}) {
+  if (session?.role !== "admin" || !supabaseClient || adminRequestsLoading) return;
+  const silent = options.silent === true;
   adminRequestsLoading = true;
-  renderAdminRequestCalendar();
+  if (!silent) renderAdminRequestCalendar();
   try {
     const result = await supabaseClient.from("invite_requests").select("*").order("created_at", { ascending: false });
     if (result.error) throw result.error;
     data.requests = (result.data || []).map(requestFromRow);
     lastAdminRequestError = "";
+    adminRequestsLastFetched = Date.now();
     saveData({ cloud: false });
   } catch (error) {
     lastAdminRequestError = error.message || "待審核申請讀取失敗";
@@ -687,6 +690,7 @@ function renderAdminDraftPreview(dateKey) {
     ${preview.schedule ? `<p><strong>\u6211\u7684\u884c\u7a0b\u5b89\u6392\uff1a</strong>${escapeHtml(preview.schedule)}</p>` : ""}
     ${preview.remaining !== "no" ? `<p><strong>\u5269\u9918\u53ef\u7d04\u6642\u9593\uff1a</strong>${escapeHtml(preview.remaining)}</p>` : ""}
   `;
+
 }
 
 function renderAdminTimePicker(dateKey, day) {
@@ -718,6 +722,7 @@ function renderAdminTimePicker(dateKey, day) {
       <div class="time-chip-grid" data-admin-time-grid="${dateKey}"></div>
     </section>
   `;
+
 }
 
 function memoHintTimes(day) {
@@ -764,7 +769,8 @@ function showView(view) {
   render();
   if (view === "admin") {
     renderAdmin();
-    refreshAdminRequests();
+    const shouldRefreshRequests = Date.now() - adminRequestsLastFetched > 15000;
+    if (shouldRefreshRequests) refreshAdminRequests({ silent: true });
   }
 }
 
@@ -814,6 +820,7 @@ function editableBlock(selector, settingKey, multiline = false) {
   target.innerHTML = `
     <span class="editable-copy" contenteditable="true" data-editing-setting="${settingKey}" data-original="${escapeHtml(value)}">${multiline ? escapeHtml(value).replaceAll("\n", "<br>") : escapeHtml(value)}</span>
   `;
+
 }
 
 function renderIntro() {
@@ -997,6 +1004,7 @@ function renderDayDetail(dateKey) {
       ${availableTimes.length ? `<button class="primary-button" type="button" data-book-from-detail="${dateKey}">\u9ede\u6211\u770b\u5176\u4ed6\u6642\u9593</button>` : ""}
     </section>
   `;
+
 }
 function requestNeedsReview(request) {
   return request.status === "pending" || request.status === "change";
@@ -1017,8 +1025,8 @@ function renderAdminRequestCalendar() {
   const month = currentMonth.getMonth();
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
-  const cells = [];
   const allRequests = Array.isArray(data.requests) ? data.requests : [];
+  const cells = [];
   const monthRequests = allRequests.filter((request) => {
     if (!request.date) return false;
     const requestDate = new Date(`${request.date}T00:00:00`);
@@ -1035,9 +1043,9 @@ function renderAdminRequestCalendar() {
     const needsReview = requests.some(requestNeedsReview);
     const approvedCount = requests.filter((request) => request.status === "approved").length;
     const requestCount = requests.length;
-    const tag = needsReview ? "\u5f85\u5be9" : approvedCount ? "OK" : requestCount ? "\u5df2\u8655\u7406" : "";
+    const tag = needsReview ? "待審" : approvedCount ? "OK" : requestCount ? "已處理" : "";
     const element = requestCount ? "button" : "div";
-    const buttonAttrs = requestCount ? `type="button" data-review-date="${key}" aria-label="\u67e5\u770b ${formatDate(key)} \u7684\u7533\u8acb"` : "";
+    const buttonAttrs = requestCount ? `type="button" data-review-date="${key}" aria-label="查看 ${formatDate(key)} 的申請"` : "";
 
     cells.push(`
       <${element} ${buttonAttrs} class="month-day request-review-day ${needsReview ? "needs-review" : ""} ${requestCount ? "has-request" : "no-request"}">
@@ -1066,6 +1074,14 @@ function renderAdminRequestCalendar() {
       <div class="month-grid admin-review-grid">${cells.join("")}</div>
     </div>
   `;
+
+  target.querySelectorAll("[data-review-date]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openAdminRequestDialog(button.dataset.reviewDate);
+    });
+  });
 }
 
 function renderAdmin() {
@@ -1154,6 +1170,7 @@ function renderTypeEditor() {
         : `<p class="empty-state">\u76ee\u524d\u6c92\u6709\u985e\u578b\u3002</p>`
     }
   `;
+
 }
 
 function commitTypeEditor(typeId) {
@@ -1947,7 +1964,7 @@ document.querySelectorAll(".admin-menu button").forEach((button) => {
     $(`#admin${button.dataset.adminTab[0].toUpperCase()}${button.dataset.adminTab.slice(1)}Tab`)?.classList.remove("hidden");
     if (button.dataset.adminTab === "requests") {
       renderAdminRequestCalendar();
-      refreshAdminRequests();
+      refreshAdminRequests({ silent: true });
     }
     if (button.dataset.adminTab === "types") renderTypeEditor();
   });
@@ -1960,6 +1977,9 @@ async function initApp() {
 }
 
 initApp();
+
+
+
 
 
 
