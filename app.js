@@ -72,6 +72,11 @@ activityTypes = data.activityTypes;
 let session = null;
 let activeView = "public";
 let currentMonth = new Date(2026, 6, 1);
+let adminRequestMonth = new Date(2026, 6, 1);
+let adminRequestMonthTouched = false;
+let lastAdminMonthNavAt = 0;
+let lastReviewActionKey = '';
+let lastReviewActionAt = 0;
 let selectedDateKey = "";
 let selectedAdminDateKey = "";
 let selectedAdminRequestDateKey = "";
@@ -1024,6 +1029,32 @@ function requestNeedsReview(request) {
   return request.status === "pending" || request.status === "change";
 }
 
+function requestMonthDate(dateKey) {
+  const [year, month] = String(dateKey || "").split("-").map(Number);
+  if (!year || !month) return null;
+  return new Date(year, month - 1, 1);
+}
+
+function requestIsInMonth(request, monthDate) {
+  const requestMonth = requestMonthDate(request.date);
+  return requestMonth && requestMonth.getFullYear() === monthDate.getFullYear() && requestMonth.getMonth() === monthDate.getMonth();
+}
+
+function preferredAdminRequestMonth(requests) {
+  const dated = requests.filter((request) => request.date && request.status !== "done");
+  const reviewable = dated.filter(requestNeedsReview).sort((a, b) => a.date.localeCompare(b.date));
+  const fallback = dated.sort((a, b) => a.date.localeCompare(b.date));
+  const chosen = reviewable[0] || fallback[0];
+  return chosen ? requestMonthDate(chosen.date) : null;
+}
+
+function syncAdminRequestMonthToRequests(requests) {
+  if (adminRequestMonthTouched) return;
+  const currentHasRequests = requests.some((request) => request.status !== "done" && requestIsInMonth(request, adminRequestMonth));
+  if (currentHasRequests) return;
+  const preferredMonth = preferredAdminRequestMonth(requests);
+  if (preferredMonth) adminRequestMonth = preferredMonth;
+}
 function discussionReply(request) {
   return `${request.name || "朋友"}的這個時間我要改晚一點你OK嗎?`;
 }
@@ -1062,7 +1093,7 @@ function renderAdminRequestCalendar() {
     const requestCount = requests.length;
     const tag = needsReview ? "待審" : approvedCount ? "OK" : requestCount ? "已處理" : "";
     const element = requestCount ? "button" : "div";
-    const buttonAttrs = requestCount ? `type="button" data-review-date="${key}" onclick="event.stopPropagation(); openAdminRequestDialog('${key}')" aria-label="查看 ${formatDate(key)} 的申請"` : "";
+    const buttonAttrs = requestCount ? `type="button" data-review-date="${key}" onpointerup="selectAdminRequestDate('${key}')" onclick="selectAdminRequestDate('${key}')" aria-label="查看 ${formatDate(key)} 的申請"` : "";
 
     cells.push(`
       <${element} ${buttonAttrs} class="month-day request-review-day ${needsReview ? "needs-review" : ""} ${requestCount ? "has-request" : "no-request"} ${selectedAdminRequestDateKey === key ? "selected" : ""}">
@@ -1076,12 +1107,12 @@ function renderAdminRequestCalendar() {
   target.innerHTML = `
     <div class="admin-request-calendar">
       <div class="month-head compact">
-        <button class="small-round" id="adminRequestPrevMonth" type="button" aria-label="\u4e0a\u4e00\u500b\u6708">&#8249;</button>
+        <button class="small-round" id="adminRequestPrevMonth" type="button" onpointerup="goAdminRequestMonth(-1)" onclick="goAdminRequestMonth(-1)" aria-label="\u4e0a\u4e00\u500b\u6708">&#8249;</button>
         <div>
           <p class="card-kicker">review month</p>
           <h3>${year} \u5e74 ${month + 1} \u6708</h3>
         </div>
-        <button class="small-round" id="adminRequestNextMonth" type="button" aria-label="\u4e0b\u4e00\u500b\u6708">&#8250;</button>
+        <button class="small-round" id="adminRequestNextMonth" type="button" onpointerup="goAdminRequestMonth(1)" onclick="goAdminRequestMonth(1)" aria-label="\u4e0b\u4e00\u500b\u6708">&#8250;</button>
       </div>
       <p class="admin-review-summary">${adminRequestsLoading ? "正在讀取待審核申請..." : lastAdminRequestError ? `讀取失敗：${escapeHtml(lastAdminRequestError)}` : reviewCount ? `有 ${reviewCount} 筆還在等你審核。` : "目前沒有待審核的申請。"}</p>
       <div class="week-row" aria-hidden="true">
@@ -1097,7 +1128,7 @@ function renderAdminRequestCalendar() {
     button.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      openAdminRequestDialog(button.dataset.reviewDate);
+      selectAdminRequestDate(button.dataset.reviewDate);
     });
   });
 }
@@ -1385,9 +1416,9 @@ function adminSingleRequestCardHtml(request) {
       <p class="request-meta">${formatDate(request.date)} · ${formatRequestTimeRange(request)}</p>
       <p>${escapeHtml(request.message || "沒有留言")}</p>
       <div class="button-row review-actions">
-        <button class="review-action ok ${request.status === "approved" ? "active" : ""}" type="button" data-review-action="approved" data-review-id="${request.id}" onclick="event.stopPropagation(); updateRequestReview('${request.id}','approved')">OK</button>
-        <button class="review-action discuss ${request.status === "change" ? "active" : ""}" type="button" data-review-action="change" data-review-id="${request.id}" onclick="event.stopPropagation(); updateRequestReview('${request.id}','change')">需討論</button>
-        <button class="review-action no ${request.status === "declined" ? "active" : ""}" type="button" data-review-action="declined" data-review-id="${request.id}" onclick="event.stopPropagation(); updateRequestReview('${request.id}','declined')">NO</button>
+        <button class="review-action ok ${request.status === "approved" ? "active" : ""}" type="button" data-review-action="approved" data-review-id="${request.id}" onpointerup="reviewRequestAction('${request.id}','approved')" onclick="reviewRequestAction('${request.id}','approved')">OK</button>
+        <button class="review-action discuss ${request.status === "change" ? "active" : ""}" type="button" data-review-action="change" data-review-id="${request.id}" onpointerup="reviewRequestAction('${request.id}','change')" onclick="reviewRequestAction('${request.id}','change')">需討論</button>
+        <button class="review-action no ${request.status === "declined" ? "active" : ""}" type="button" data-review-action="declined" data-review-id="${request.id}" onpointerup="reviewRequestAction('${request.id}','declined')" onclick="reviewRequestAction('${request.id}','declined')">NO</button>
       </div>
       <div class="reply-template-list">
         ${replyChoices
@@ -1419,11 +1450,34 @@ function renderAdminRequestDialog() {
   $("#adminRequestDialogBody").innerHTML = adminRequestCardsHtml(selectedAdminRequestDateKey);
 }
 
-function openAdminRequestDialog(dateKey) {
+function selectAdminRequestDate(dateKey) {
   selectedAdminRequestDateKey = dateKey;
   adminReviewNotice = "";
   renderAdminRequestCalendar();
   scrollToAdminRequests(".inline-review-panel");
+}
+
+function goAdminRequestMonth(delta) {
+  const now = Date.now();
+  if (now - lastAdminMonthNavAt < 220) return;
+  lastAdminMonthNavAt = now;
+  adminRequestMonthTouched = true;
+  adminRequestMonth = new Date(adminRequestMonth.getFullYear(), adminRequestMonth.getMonth() + Number(delta || 0), 1);
+  selectedAdminRequestDateKey = "";
+  renderAdminRequestCalendar();
+  refreshAdminRequests({ silent: true, force: true });
+}
+
+function reviewRequestAction(requestId, nextStatus) {
+  const now = Date.now();
+  const actionKey = `${requestId}:${nextStatus}`;
+  if (actionKey === lastReviewActionKey && now - lastReviewActionAt < 220) return;
+  lastReviewActionKey = actionKey;
+  lastReviewActionAt = now;
+  updateRequestReview(requestId, nextStatus);
+}
+function openAdminRequestDialog(dateKey) {
+  selectAdminRequestDate(dateKey);
 }
 function syncApprovedRequestToCalendar(request) {
   const day = getCalendarDay(request.date);
@@ -1730,7 +1784,7 @@ document.addEventListener("click", (event) => {
   if (!reviewDayButton) return;
   event.preventDefault();
   event.stopPropagation();
-  openAdminRequestDialog(reviewDayButton.dataset.reviewDate);
+  selectAdminRequestDate(reviewDayButton.dataset.reviewDate);
 }, true);
 document.body.addEventListener("click", async (event) => {
   const target = event.target;
@@ -1768,12 +1822,12 @@ document.body.addEventListener("click", async (event) => {
   }
   const reviewDayButton = target.closest("[data-review-date]");
   if (reviewDayButton) {
-    openAdminRequestDialog(reviewDayButton.dataset.reviewDate);
+    selectAdminRequestDate(reviewDayButton.dataset.reviewDate);
     return;
   }
   const reviewActionButton = target.closest("[data-review-action]");
   if (reviewActionButton) {
-    updateRequestReview(reviewActionButton.dataset.reviewId, reviewActionButton.dataset.reviewAction);
+    reviewRequestAction(reviewActionButton.dataset.reviewId, reviewActionButton.dataset.reviewAction);
     return;
   }
   const deleteRequestButton = target.closest("[data-delete-request]");
@@ -2015,6 +2069,9 @@ async function initApp() {
 }
 
 initApp();
+
+
+
 
 
 
