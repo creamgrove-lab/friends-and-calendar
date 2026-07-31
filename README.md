@@ -14,9 +14,7 @@
 
 ## 試用帳號
 
-- 我的後台：admin / admin123
-- 朋友帳號：mei / mei123
-- 朋友帳號：yu / yu123
+- 我的後台：milyss.studio+calendar@gmail.com / fac123456
 
 ## 怎麼打開
 
