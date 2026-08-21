@@ -490,6 +490,10 @@ function toDateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+function isPastDate(dateKey) {
+  return Boolean(dateKey) && dateKey < toDateKey(new Date());
+}
+
 function formatDate(date) {
   if (!date) return "未指定日期";
   const [year, month, day] = date.split("-").map(Number);
@@ -770,6 +774,7 @@ function summarizeRequests(dateKey) {
 }
 
 function dayVisualStatus(day, requests) {
+  if (session?.role !== "admin" && isPastDate(day.date)) return "closed";
   const hasApproved = requests.some((request) => request.status === "approved");
   const hasBusyReview = !hasApproved && requests.some((request) => request.status === "change" || request.status === "declined");
   const hasWaiting = requests.some((request) => request.status === "pending");
@@ -870,7 +875,7 @@ function editableBlock(selector, settingKey, multiline = false) {
 function renderIntro() {
   editableBlock("#heroEyebrow", "heroEyebrow");
   editableBlock("#heroTitle", "heroTitle");
-  editableBlock("#heroBody", "heroBody");
+  editableBlock("#heroBody", "heroBody", true);
   $("#heroEditToggle").classList.toggle("hidden", session?.role !== "admin" || editingGroup === "hero");
   $("#heroEditActions").classList.toggle("hidden", session?.role !== "admin" || editingGroup !== "hero");
   $(".brand").textContent = data.settings.heroTitle || "妳想約約ㄇ";
@@ -945,7 +950,7 @@ function renderMonth() {
     const visualStatus = dayVisualStatus(base, requests);
     const hasApprovedRequest = requests.some((request) => request.status === "approved");
     const hasBusyReview = !hasApprovedRequest && requests.some((request) => request.status === "change" || request.status === "declined");
-    const canBook = !hasBusyReview && isDayBookable(base, key);
+    const canBook = !isPastDate(key) && !hasBusyReview && isDayBookable(base, key);
     const hasPublicContext = requests.some((request) => request.status !== "done");
     const defaultPublicStatus = statusText[base.status] || "";
     const customPublicStatus = (base.publicStatus || "").trim();
@@ -1001,6 +1006,13 @@ function activityPublicEvent(request) {
 }
 
 function dayPublicDetail(day, dateKey, requests, availableTimes) {
+  if (isPastDate(dateKey)) {
+    return {
+      status: "暫不開放",
+      schedule: "",
+      remaining: "no",
+    };
+  }
   const approved = requests.find((request) => request.status === "approved");
   const busyRequest = requests.find((request) => request.status === "change" || request.status === "declined");
   const waitingRequest = requests.find((request) => request.status === "pending");
